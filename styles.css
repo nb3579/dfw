@@ -1,19 +1,24 @@
+/* 文件名: styles.css
+   描述: 大富翁4：全球城市大地图 全局样式与 26x26 棋盘布局控制
+   更新日期: 2026-06-22
+*/
+
 /* =======================================================
 大富翁4：全球城市大地图 全局样式与 26x26 棋盘布局控制
 ======================================================= */
 
 body {
-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft YaHei", sans-serif;
-background-color: #0b0c10;
--webkit-font-smoothing: antialiased;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft YaHei", sans-serif;
+  background-color: #0b0c10;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* 26x26 Grid 大棋盘样式 */
 .grid-cols-26 {
-grid-template-columns: repeat(26, minmax(0, 1fr));
+  grid-template-columns: repeat(26, minmax(0, 1fr));
 }
 .grid-rows-26 {
-grid-template-rows: repeat(26, minmax(0, 1fr));
+  grid-template-rows: repeat(26, minmax(0, 1fr));
 }
 
 .col-start-2 { grid-column-start: 2; }
@@ -23,77 +28,81 @@ grid-template-rows: repeat(26, minmax(0, 1fr));
 
 /* 炫彩物主高发光霓虹边框 */
 .neon-border-pink {
-border: 3px solid #ec4899 !important;
-box-shadow: 0 0 15px rgba(236, 72, 153, 0.45) !important;
+  border: 3px solid #ec4899 !important;
+  box-shadow: 0 0 15px rgba(236, 72, 153, 0.45) !important;
 }
 
 .neon-border-blue {
-border: 3px solid #3b82f6 !important;
-box-shadow: 0 0 15px rgba(59, 130, 246, 0.45) !important;
+  border: 3px solid #3b82f6 !important;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.45) !important;
 }
 
 .neon-border-green {
-border: 3px solid #22c55e !important;
-box-shadow: 0 0 15px rgba(34, 197, 94, 0.45) !important;
+  border: 3px solid #22c55e !important;
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.45) !important;
 }
 
 .neon-border-amber {
-border: 3px solid #f59e0b !important;
-box-shadow: 0 0 15px rgba(245, 158, 11, 0.45) !important;
+  border: 3px solid #f59e0b !important;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.45) !important;
 }
 
 /* 骰子动画 */
 @keyframes diceRoll {
-0% { transform: rotate(0deg) scale(1); }
-30% { transform: rotate(140deg) scale(1.2); }
-70% { transform: rotate(-140deg) scale(0.9); }
-100% { transform: rotate(360deg) scale(1); }
+  0% { transform: rotate(0deg) scale(1); }
+  30% { transform: rotate(140deg) scale(1.2); }
+  70% { transform: rotate(-140deg) scale(0.9); }
+  100% { transform: rotate(360deg) scale(1); }
 }
 
 .dice-rolling {
-animation: diceRoll 0.5s ease-out infinite;
+  animation: diceRoll 0.5s ease-out infinite;
 }
 
 /* 隐藏滚动条 */
 .no-scrollbar::-webkit-scrollbar {
-display: none;
+  display: none;
 }
 .no-scrollbar {
--ms-overflow-style: none;
-scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* =======================================================
 💸 弹跳现金粒子飘动动画气泡 (完美适配 26x26 物理定位)
 ======================================================= */
 @keyframes floatUp {
-0% {
-transform: translate(-50%, 0) scale(0.7);
-opacity: 0;
-}
-15% {
-transform: translate(-50%, -24px) scale(1.35);
-opacity: 1;
-}
-80% {
-transform: translate(-50%, -40px) scale(1.1);
-opacity: 0.95;
-}
-100% {
-transform: translate(-50%, -64px) scale(0.8);
-opacity: 0;
-}
+  0% {
+    transform: translate(-50%, 0) scale(0.7);
+    opacity: 0;
+  }
+  15% {
+    transform: translate(-50%, -24px) scale(1.35);
+    opacity: 1;
+  }
+  80% {
+    transform: translate(-50%, -40px) scale(1.1);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(-50%, -64px) scale(0.8);
+    opacity: 0;
+  }
 }
 
 .floating-money-node {
-position: absolute;
-font-weight: 900;
-font-size: 18px;
-animation: floatUp 1.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
-pointer-events: none;
-z-index: 9999;
-font-family: "Impact", "Arial Black", sans-serif;
-text-shadow:
-0 2px 5px rgba(0, 0, 0, 0.95),
-0 0 10px rgba(0, 0, 0, 0.6);
+  position: absolute;
+  font-weight: 900;
+  font-size: 18px;
+  animation: floatUp 1.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  pointer-events: none;
+  z-index: 9999;
+  font-family: "Impact", "Arial Black", sans-serif;
+  text-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.95),
+    0 0 10px rgba(0, 0, 0, 0.6);
 }
+
+/* 收益/亏损颜色区分 */
+.money-gain { color: #22c55e; }
+.money-loss { color: #ef4444; }
