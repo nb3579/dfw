@@ -4,14 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>大富翁4：全球城市大地图与神仙争霸版</title>
+  <!-- 矢量 SVG 图标：彻底根除浏览器 favicon.ico 404 报错 -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="text-gray-100 bg-slate-950 p-2 sm:p-4 font-sans antialiased min-h-screen">
 
+  <!-- 游戏主容器 -->
   <div id="app" class="max-w-[1700px] w-full mx-auto">
     
+    <!-- 1. 游戏初始化/角色选择界面 -->
     <div id="setup-screen" class="max-w-xl mx-auto my-12 bg-slate-900/95 rounded-[2.5rem] p-6 md:p-8 shadow-2xl border border-slate-800 backdrop-blur-md">
       <div class="text-center mb-6">
         <h1 class="text-3xl font-black bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 bg-clip-text text-transparent filter drop-shadow">
@@ -20,6 +24,7 @@
         <p class="text-slate-500 text-xs mt-1 uppercase tracking-widest font-bold">Global 100-Tiles Engine</p>
       </div>
 
+      <!-- 游戏全局规则参数微调 -->
       <div class="grid grid-cols-2 gap-4 bg-slate-950/60 p-4 rounded-2xl border border-slate-850 mb-6 shadow-inner">
         <div>
           <label class="block text-[11px] font-black text-slate-400 uppercase mb-1 tracking-wider">初始可用现金</label>
@@ -31,6 +36,7 @@
         </div>
       </div>
 
+      <!-- 动态分配容器 -->
       <div class="space-y-3" id="player-setup-list"></div>
 
       <button onclick="startGame()" class="w-full mt-6 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-sm py-4 rounded-2xl transition-all shadow-[0_0_20px_rgba(34,211,238,0.25)] hover:shadow-[0_0_30px_rgba(34,211,238,0.45)]">
@@ -38,10 +44,14 @@
       </button>
     </div>
 
+    <!-- 2. 核心大游戏主战场界面（默认隐藏） -->
     <div id="game-screen" class="hidden flex flex-col lg:flex-row gap-4 h-[calc(100vh-2rem)]">
       
+      <!-- 左侧区域：超大100格子世界地图展示板 (允许在固定高度内无限横纵滚动) -->
       <div class="flex-grow bg-slate-900/40 border border-slate-900 rounded-[2rem] p-2 relative shadow-2xl overflow-auto no-scrollbar" style="min-height: 450px;">
+        <!-- 精准映射 26x26 的巨型Grid底板 -->
         <div id="board-container" class="grid grid-cols-26 grid-rows-26 gap-1.5 p-2 bg-slate-950/90 rounded-[1.5rem] relative" style="width: 1600px; height: 1600px;">
+          <!-- 中心宏观科技感装饰看板 -->
           <div class="col-start-2 col-end-26 row-start-2 row-end-26 bg-slate-950/80 border border-slate-900/60 rounded-[1.5rem] flex flex-col items-center justify-center p-8 text-center pointer-events-none select-none z-0 shadow-inner">
             <div class="text-7xl opacity-25 animate-pulse mb-2">🗺️</div>
             <h2 class="text-3xl font-black tracking-tighter text-slate-800 uppercase">Global World Map</h2>
@@ -53,8 +63,10 @@
         </div>
       </div>
 
+      <!-- 右侧侧边栏：状态面板 + 控制终端 (高度固定不随页面被撑开) -->
       <div class="w-full lg:w-[380px] shrink-0 flex flex-col gap-3 h-full max-h-[calc(100vh-2rem)] overflow-y-auto pr-1">
         
+        <!-- 当前回合行动核心指示器 -->
         <div class="bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-850 p-3 rounded-2xl shadow-lg flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div id="current-player-avatar" class="text-4xl filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)] animate-bounce">👧</div>
@@ -68,6 +80,7 @@
           </div>
         </div>
 
+        <!-- 🎲 骰子控制区 -->
         <div class="bg-slate-900/90 border border-slate-850 p-4 rounded-2xl shadow-lg flex items-center justify-around gap-2">
           <div id="dice-element" class="w-16 h-16 bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 text-white text-4xl font-black rounded-2xl flex items-center justify-center shadow-xl select-none cursor-pointer">🎲</div>
           <div class="flex flex-col gap-2 w-full max-w-[180px]">
@@ -80,6 +93,7 @@
           </div>
         </div>
 
+        <!-- 🎟️ 环球时时彩系统控制台 -->
         <div class="bg-slate-900/70 border border-slate-850 p-3 rounded-2xl shadow-md">
           <div class="flex justify-between items-center mb-2">
             <span class="text-xs font-black text-yellow-500 flex items-center gap-1">🎰 时时彩奖池</span>
@@ -94,11 +108,13 @@
           </button>
         </div>
 
+        <!-- 📊 动态财富资产排行榜 -->
         <div class="flex-grow flex flex-col gap-2 min-h-[180px]">
           <div class="text-[11px] font-black text-slate-500 uppercase tracking-wider pl-1">全球财阀资产榜</div>
           <div id="player-ranks" class="space-y-2 overflow-y-auto no-scrollbar"></div>
         </div>
 
+        <!-- 📜 实时战局日志动态刷新面板 -->
         <div class="bg-slate-950 border border-slate-900 rounded-2xl p-3 flex flex-col h-[130px] shrink-0">
           <div class="text-[10px] font-black text-slate-500 uppercase mb-1.5 flex justify-between items-center">
             <span>战局通报日志</span>
@@ -112,6 +128,11 @@
 
   </div>
 
+  <!-- ==========================================
+       三大游戏交互浮层弹窗组件容器（默认全部隐藏）
+       ========================================== -->
+       
+  <!-- 1. 无主地块收购 / 自有地加盖 弹窗 -->
   <div id="property-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4 backdrop-blur-sm">
     <div class="bg-slate-900 border border-slate-800 rounded-[2rem] p-5 max-w-sm w-full shadow-2xl relative transform scale-100 transition-all">
       <div id="prop-color-bar" class="h-3 w-full rounded-full mb-4 bg-gradient-to-r from-cyan-500 to-blue-500"></div>
@@ -135,6 +156,7 @@
     </div>
   </div>
 
+  <!-- 2. 神明庙宇宇请神功能 弹窗 -->
   <div id="shrine-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4 backdrop-blur-sm">
     <div class="bg-slate-900 border border-slate-800 rounded-[2rem] p-6 max-w-md w-full shadow-2xl text-center">
       <div class="text-4xl mb-2">⛩️</div>
@@ -167,6 +189,7 @@
     </div>
   </div>
 
+  <!-- 3. 命运/机会/大型事件全局通告 弹窗 -->
   <div id="event-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4 backdrop-blur-sm">
     <div class="bg-slate-900 border border-slate-800 rounded-[2rem] p-6 max-w-sm w-full shadow-2xl text-center transform scale-100 transition-all">
       <div class="text-5xl mb-3" id="event-modal-icon">🎰</div>
@@ -174,4 +197,15 @@
       <div class="my-4 bg-slate-950/60 p-4 rounded-2xl text-xs leading-relaxed text-slate-300 min-h-[60px] flex items-center justify-center font-medium" id="event-modal-text">
         加载中...
       </div>
-      <button onclick="closeEventModal()" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-
+      <button onclick="closeEventModal()" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black py-3 rounded-xl transition-all text-xs shadow-md">
+        遵从命运指引
+      </button>
+    </div>
+  </div>
+
+  <!-- 载入脚本：路径已完美适配子文件夹 js/ -->
+  <script src="js/audio.js"></script>
+  <script src="js/stock.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
