@@ -3,135 +3,126 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>大富翁4：环球地产大亨 无限复利版</title>
+  <title>大富翁：资本帝国复利版</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="styles.css">
-  <style>
-    /* 隐藏滚动条 */
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-  </style>
 </head>
-<body class="text-gray-100 bg-slate-950 p-1 sm:p-2 font-sans antialiased min-h-screen flex flex-col justify-center items-center overflow-hidden">
+<body class="text-gray-100 bg-slate-950 p-2 md:p-4 font-sans antialiased min-h-screen flex flex-col justify-center items-center overflow-hidden">
 
   <!-- 游戏主容器 -->
-  <div id="app" class="w-full h-full flex items-center justify-center">
+  <div id="app" class="w-full h-full flex items-center justify-center max-w-[1800px] mx-auto">
     
     <!-- 1. 游戏初始化/角色选择界面 -->
-    <div id="setup-screen" class="max-w-xl mx-auto my-auto bg-slate-900/95 rounded-[2.5rem] p-6 md:p-8 shadow-2xl border border-slate-800 backdrop-blur-md w-full">
-      <div class="text-center mb-6">
-        <h1 class="text-3xl font-black bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 bg-clip-text text-transparent filter drop-shadow">
-          大富翁：环球地产大亨
+    <div id="setup-screen" class="max-w-2xl mx-auto my-auto bg-slate-900/95 rounded-[2.5rem] p-6 md:p-10 shadow-2xl border border-slate-800 backdrop-blur-md w-full">
+      <div class="text-center mb-8">
+        <h1 class="text-4xl font-black bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 bg-clip-text text-transparent filter drop-shadow">
+          大富翁：资本帝国
         </h1>
-        <p class="text-slate-500 text-xs mt-1 uppercase tracking-widest font-bold">16x9 超宽幅实景沙盘模式</p>
+        <p class="text-slate-500 text-xs mt-2 uppercase tracking-widest font-bold">16x9 自适应宽幅实景沙盘模式</p>
       </div>
 
       <!-- 游戏全局规则参数微调 -->
-      <div class="grid grid-cols-2 gap-4 bg-slate-950/60 p-4 rounded-2xl border border-slate-850 mb-6 shadow-inner">
+      <div class="grid grid-cols-2 gap-4 bg-slate-950/60 p-5 rounded-2xl border border-slate-850 mb-6 shadow-inner">
         <div>
-          <label class="block text-[11px] font-black text-slate-400 uppercase mb-1 tracking-wider">初始资金储备</label>
-          <input type="number" id="init-cash" value="50000" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-emerald-400 focus:outline-none focus:border-cyan-400">
+          <label class="block text-[11px] font-black text-slate-400 uppercase mb-1.5 tracking-wider">初始流动资金</label>
+          <input type="number" id="init-cash" value="50000" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-bold text-emerald-400 focus:outline-none focus:border-cyan-400">
         </div>
         <div>
-          <label class="block text-[11px] font-black text-slate-400 uppercase mb-1 tracking-wider">经过起点红利</label>
-          <input type="number" id="start-bonus" value="8000" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-amber-400 focus:outline-none focus:border-cyan-400">
+          <label class="block text-[11px] font-black text-slate-400 uppercase mb-1.5 tracking-wider">起点周转红利</label>
+          <input type="number" id="start-bonus" value="10000" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-bold text-amber-400 focus:outline-none focus:border-cyan-400">
         </div>
       </div>
 
-      <div class="mb-5 bg-slate-900 border border-slate-800 p-4 rounded-xl text-xs text-slate-400 space-y-1.5 leading-relaxed">
-        <div class="font-bold text-cyan-400 mb-2">📜 资本复利法则：</div>
+      <div class="mb-6 bg-slate-900 border border-slate-800 p-4 rounded-xl text-xs text-slate-400 space-y-2 leading-relaxed">
+        <div class="font-bold text-emerald-400 mb-1">⚖️ 资本复利法则：</div>
         <div>1. 城市地价分为极品至平民四档: <span class="text-white font-bold">$3500, $3000, $2500, $2000</span>。</div>
-        <div>2. 基础过路费始终维持为当前地价的 <span class="text-white font-bold">10%</span>。</div>
-        <div>3. <span class="text-rose-400 font-bold">无限加盖</span>：每次升级仅需支付当前过路费的等额现金。</div>
-        <div>4. 升级后，投资的现金将无缝增加至城市总地价中，过路费随之复利暴涨！</div>
+        <div>2. 基础过路费始终维持为当前地价的 <span class="text-white font-bold">10%</span>。升级不设上限。</div>
+        <div>3. <span class="text-amber-400 font-bold">资产利息</span>：回合开始时自动获取总资产 <span class="text-white">1%</span> 的无风险利息。</div>
+        <div>4. <span class="text-purple-400 font-bold">命运转盘</span>：所有命运黑天鹅事件按总资产的 <span class="text-white">5%</span> 动态核算。</div>
       </div>
 
       <!-- 动态分配容器 -->
       <div class="space-y-3" id="player-setup-list"></div>
 
-      <button onclick="startGame()" class="w-full mt-6 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-sm py-4 rounded-2xl transition-all shadow-[0_0_20px_rgba(34,211,238,0.25)] hover:shadow-[0_0_30px_rgba(34,211,238,0.45)]">
-        签 署 契 约 ， 開 局 ！
+      <button onclick="startGame()" class="w-full mt-8 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-base py-4 rounded-2xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.25)]">
+        签 署 契 约 ， 開 局
       </button>
     </div>
 
     <!-- 2. 核心大游戏主战场界面 -->
-    <div id="game-screen" class="hidden h-screen w-screen flex items-center justify-center overflow-hidden">
+    <div id="game-screen" class="hidden w-full flex items-center justify-center overflow-hidden">
       
-      <!-- 采用 16列 x 9行 完美宽幅比例布局 -->
-      <div id="board-container" class="grid grid-cols-[16] grid-rows-[9] gap-1 p-1 bg-slate-950/90 border border-slate-900 rounded-[1.5rem] relative w-full h-full max-w-[1600px] max-h-[900px]">
+      <!-- 采用 16列 x 9行 完美比例，并使用 aspect-video 确保它在任何屏幕缩放比例正确 -->
+      <div id="board-container" class="grid grid-cols-16 grid-rows-9 gap-0.5 sm:gap-1 p-1 bg-slate-950 border border-slate-900 rounded-[1.25rem] relative w-full aspect-video max-h-[96vh] shadow-2xl">
         
         <!-- ==========================================
-             核心大厅：内部空间完美计算，完全拉伸填满
+             中央指挥大厅：完美贴合内圈 14x7，无黑边
              ========================================== -->
-        <div class="col-start-2 col-end-[16] row-start-2 row-end-[9] bg-slate-900/95 border border-slate-850 rounded-[1rem] p-4 flex flex-col justify-between overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.85)] z-0 relative">
+        <div class="col-start-2 col-end-16 row-start-2 row-end-9 bg-slate-900/90 border border-slate-850 rounded-xl p-3 sm:p-5 flex gap-4 overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.6)] z-0 relative">
           
-          <div class="grid grid-cols-12 gap-4 h-full w-full">
+          <!-- 大厅左侧：排行榜 (约占 35% 宽度，纵向填满) -->
+          <div class="w-[35%] flex flex-col h-full bg-slate-950/60 p-3.5 border border-slate-800/80 rounded-xl overflow-hidden shadow-inner">
+            <div class="text-xs lg:text-sm font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-800/80 pb-2 flex justify-between shrink-0">
+              <span>🏆 财阀资产排行榜</span>
+              <span class="text-emerald-400 animate-pulse text-[10px]">复利运转中</span>
+            </div>
+            <div id="player-ranks" class="flex-grow flex flex-col gap-2 overflow-y-auto no-scrollbar">
+              <!-- 排行榜卡片 -->
+            </div>
+          </div>
+
+          <!-- 大厅右侧：行动中枢 + 战局日志 (约占 65% 宽度) -->
+          <div class="w-[65%] flex flex-col h-full gap-4">
             
-            <!-- 大厅左侧：排行榜 (flex-grow 填满纵向) -->
-            <div class="col-span-5 flex flex-col h-full bg-slate-950/60 p-3.5 border border-slate-850 rounded-xl overflow-hidden shadow-inner">
-              <div class="text-sm font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-800/80 pb-3 flex justify-between shrink-0">
-                <span>🏆 财阀资产实况榜</span>
-                <span class="text-cyan-400 animate-pulse text-xs">复利运转中</span>
-              </div>
-              <div id="player-ranks" class="flex-grow flex flex-col gap-2.5 overflow-y-auto no-scrollbar">
-                <!-- 排行榜卡片 -->
-              </div>
-            </div>
-
-            <!-- 大厅右侧：行动中枢 + 战局日志 -->
-            <div class="col-span-7 flex flex-col h-full gap-4">
+            <!-- 🎲 掷骰行动面板 -->
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between shadow-lg shrink-0 h-[100px] lg:h-[120px]">
               
-              <!-- 🎲 掷骰行动面板 (极简大方) -->
-              <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg shrink-0">
-                
-                <div class="flex items-center gap-4 shrink-0 w-full sm:w-auto border-b sm:border-b-0 sm:border-r border-slate-800 pb-4 sm:pb-0 sm:pr-6">
-                  <div id="current-player-avatar" class="text-5xl filter drop-shadow">👧</div>
-                  <div>
-                    <span class="text-[11px] text-slate-500 uppercase font-black block tracking-widest">当前行动方</span>
-                    <span id="current-player-name" class="text-lg font-black text-white block mt-0.5">加载中...</span>
-                  </div>
-                </div>
-
-                <!-- 骰子大按钮 -->
-                <div class="flex-grow flex items-center justify-end w-full sm:w-auto gap-4">
-                  <div id="dice-element" class="w-16 h-16 bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-700 text-white text-4xl font-black rounded-xl flex items-center justify-center shadow-lg select-none cursor-pointer">🎲</div>
-                  <div class="flex flex-col gap-2 w-full sm:w-auto">
-                    <button id="btn-roll" onclick="triggerDiceRoll()" class="w-full sm:w-32 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs px-4 py-2.5 rounded-lg transition-all shadow-md">
-                      🎲 开始掷骰
-                    </button>
-                    <button id="btn-end-turn" onclick="endTurn()" disabled class="w-full sm:w-32 bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 font-black text-xs px-4 py-2.5 rounded-lg transition-all">
-                      ⏭ 结束回合
-                    </button>
-                  </div>
+              <div class="flex items-center gap-4 shrink-0 pl-2">
+                <div id="current-player-avatar" class="text-4xl lg:text-5xl filter drop-shadow">👧</div>
+                <div>
+                  <span class="text-[10px] text-slate-500 uppercase font-black block tracking-widest">当前行动方</span>
+                  <span id="current-player-name" class="text-base lg:text-lg font-black text-white block mt-0.5">加载中...</span>
                 </div>
               </div>
 
-              <!-- 📜 战局实时日志 (flex-grow 自动填满下方所有空间) -->
-              <div class="bg-slate-950/90 border border-slate-850 p-4 rounded-2xl flex flex-col flex-grow min-h-0 shadow-xl">
-                <div class="text-xs font-black text-slate-500 uppercase mb-3 flex justify-between items-center border-b border-slate-850 pb-3 shrink-0">
-                  <span id="quick-tip" class="text-cyan-400">系统：准备掷骰</span>
-                  <button onclick="clearLogs()" class="hover:text-white text-slate-400 text-[10px] bg-slate-800 px-3 py-1.5 rounded transition-all">清空记录</button>
+              <!-- 骰子与操作按钮 -->
+              <div class="flex items-center gap-4 pr-2">
+                <div id="dice-element" class="w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-700 text-white text-3xl lg:text-4xl font-black rounded-xl flex items-center justify-center shadow-lg select-none cursor-pointer">🎲</div>
+                <div class="flex flex-col gap-2 w-28 lg:w-32">
+                  <button id="btn-roll" onclick="triggerDiceRoll()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-[11px] lg:text-xs px-2 py-2 rounded-lg transition-all shadow-md">
+                    🎲 开始掷骰
+                  </button>
+                  <button id="btn-end-turn" onclick="endTurn()" disabled class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 font-black text-[11px] lg:text-xs px-2 py-2 rounded-lg transition-all">
+                    ⏭ 结束回合
+                  </button>
                 </div>
-                <!-- 日志列表 -->
-                <div id="game-logs" class="flex-grow overflow-y-auto text-xs space-y-1.5 text-slate-400 no-scrollbar pr-2"></div>
               </div>
-
             </div>
+
+            <!-- 📜 战局实时日志 (自动向下填满剩余空间) -->
+            <div class="bg-slate-950/80 border border-slate-850 p-4 rounded-xl flex flex-col flex-grow min-h-0 shadow-xl">
+              <div class="text-xs font-black text-slate-500 uppercase mb-3 flex justify-between items-center border-b border-slate-850 pb-2 shrink-0">
+                <span id="quick-tip" class="text-cyan-400">系统：准备掷骰</span>
+                <button onclick="clearLogs()" class="hover:text-white text-slate-400 text-[10px] bg-slate-800 px-3 py-1 rounded transition-all">清空记录</button>
+              </div>
+              <div id="game-logs" class="flex-grow overflow-y-auto text-xs space-y-1.5 text-slate-400 no-scrollbar pr-2"></div>
+            </div>
+
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 无主地块收购 / 自有地加盖 弹窗 (适配复利算法UI) -->
+  <!-- 地产购置 / 加盖 复利机制弹窗 -->
   <div id="property-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4 backdrop-blur-sm">
     <div class="bg-slate-900 border border-slate-800 rounded-[2rem] p-6 max-w-sm w-full shadow-2xl relative">
-      <div id="prop-color-bar" class="h-3 w-full rounded-full mb-5 bg-gradient-to-r from-cyan-500 to-blue-500"></div>
+      <div id="prop-color-bar" class="h-3 w-full rounded-full mb-5 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
       <h3 class="text-xl font-black text-white mb-1" id="prop-title">城市收购案</h3>
       <p class="text-xs text-slate-400 leading-relaxed mb-5" id="prop-desc">加载中...</p>
       
-      <div class="bg-slate-950/80 p-4 rounded-2xl border border-slate-850 space-y-2.5 mb-5 text-xs font-bold font-mono">
+      <div class="bg-slate-950/80 p-4 rounded-2xl border border-slate-850 space-y-3 mb-5 text-xs font-bold font-mono">
         <div class="flex justify-between"><span class="text-slate-500" id="modal-label-1">当前地价 / 等级</span><span class="text-slate-200" id="prop-val-1">$0</span></div>
         <div class="flex justify-between"><span class="text-slate-500" id="modal-label-2">所需交易资金</span><span class="text-emerald-400 text-sm" id="prop-val-2">$0</span></div>
         <div class="flex justify-between pt-2 border-t border-slate-800/80"><span class="text-slate-500" id="modal-label-3">建成后过路费(10%)</span><span class="text-rose-400 text-sm" id="prop-val-3">$0</span></div>
@@ -141,7 +132,7 @@
         <button onclick="confirmPropertyAction(false)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl transition-all text-xs">
           放弃契机
         </button>
-        <button id="prop-confirm-btn" onclick="confirmPropertyAction(true)" class="flex-1 bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black py-3 rounded-xl transition-all text-xs shadow-lg">
+        <button id="prop-confirm-btn" onclick="confirmPropertyAction(true)" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-3 rounded-xl transition-all text-xs shadow-lg">
           确认交易
         </button>
       </div>
@@ -153,10 +144,10 @@
     <div class="bg-slate-900 border border-slate-800 rounded-[2rem] p-6 max-w-sm w-full shadow-2xl text-center">
       <div class="text-5xl mb-3" id="event-modal-icon">🎰</div>
       <h3 class="text-xl font-black text-cyan-300" id="event-modal-title">命运抉择</h3>
-      <div class="my-4 bg-slate-950/60 p-4 rounded-2xl text-xs leading-relaxed text-slate-300 min-h-[60px] flex items-center justify-center font-medium text-left border border-slate-850" id="event-modal-text">
+      <div class="my-5 bg-slate-950/60 p-4 rounded-2xl text-xs leading-relaxed text-slate-300 min-h-[60px] flex items-center justify-center font-medium text-left border border-slate-850" id="event-modal-text">
         加载中...
       </div>
-      <button onclick="closeEventModal()" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-black py-3 rounded-xl transition-all text-xs shadow-md">
+      <button onclick="closeEventModal()" class="w-full bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white font-black py-3 rounded-xl transition-all text-xs shadow-md">
         遵从命运指引
       </button>
     </div>
