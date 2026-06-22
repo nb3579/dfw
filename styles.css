@@ -1,5 +1,5 @@
-/* 文件名: styles.css
-   描述: 大富翁4：全球城市大地图 10x10 自适应蛇形排列控制样式表
+/* 檔名: styles.css
+   描述: 大富翁4：全球城市大地圖 11x11 完美環形自適應樣式控制表
    更新日期: 2026-06-22
 */
 
@@ -9,27 +9,28 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* 完美支持自适应的 10x10 蛇形棋盘网格 */
-.grid-cols-10 {
-  grid-template-columns: repeat(10, minmax(0, 1fr));
+/* 完美支援自適應的 11x11 環形棋盤網格 */
+.grid-cols-11 {
+  grid-template-columns: repeat(11, minmax(0, 1fr));
 }
-.grid-rows-10 {
-  grid-template-rows: repeat(10, minmax(0, 1fr));
+.grid-rows-11 {
+  grid-template-rows: repeat(11, minmax(0, 1fr));
 }
 
-/* 棋盘格高密度极佳展示风格 */
+/* 棋盤格高密度極佳展示風格 */
 .board-tile {
-  transition: all 0.25s ease-in-out;
+  transition: all 0.22s ease-in-out;
   box-sizing: border-box;
 }
 
 .board-tile:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.1);
-  box-shadow: 0 4px 12px rgba(0, 255, 255, 0.1);
+  transform: scale(1.03);
+  filter: brightness(1.15);
+  box-shadow: 0 4px 15px rgba(6, 182, 212, 0.25);
+  z-index: 10;
 }
 
-/* 炫彩物主高发光霓虹边框 */
+/* 炫彩物主高發光霓虹邊框 */
 .neon-border-pink {
   border: 2px solid #ec4899 !important;
   box-shadow: 0 0 10px rgba(236, 72, 153, 0.45) !important;
@@ -50,7 +51,7 @@ body {
   box-shadow: 0 0 10px rgba(245, 158, 11, 0.45) !important;
 }
 
-/* 骰子动画 */
+/* 骰子動畫 */
 @keyframes diceRoll {
   0% { transform: rotate(0deg) scale(1); }
   30% { transform: rotate(140deg) scale(1.2); }
@@ -62,7 +63,7 @@ body {
   animation: diceRoll 0.5s ease-out infinite;
 }
 
-/* 隐藏滚动条 */
+/* 隱藏滾動條 */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -71,9 +72,7 @@ body {
   scrollbar-width: none;
 }
 
-/* =======================================================
-💸 弹跳现金粒子飘动动画气泡 (完美适配 10x10 物理定位)
-======================================================= */
+/* 彈跳現金粒子飄動動畫氣泡 */
 @keyframes floatUp {
   0% {
     transform: translate(-50%, 0) scale(0.7);
