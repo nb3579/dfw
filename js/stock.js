@@ -13,7 +13,7 @@ class StockManager {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     
-    // 如果 Chart.js CDN 因网络拦截加载失败，则立刻进入“无依赖纯原生 Canvas 行情渲染引擎”，确保游戏 100% 顺畅，不崩溃、不卡死！
+    // 如果 Chart.js 因网络拦截加载失败，则立刻进入“无依赖纯原生 Canvas 行情渲染引擎”，确保游戏 100% 顺畅，不崩溃、不卡死！
     if (typeof Chart === 'undefined') {
       this.drawFallbackChart(ctx, canvas, stock);
       return;
@@ -65,13 +65,13 @@ class StockManager {
         scales: {
           x: {
             grid: { color: 'rgba(255, 255, 255, 0.03)' },
-            ticks: { color: '#64748b', font: { size: 9 } }
+            ticks: { color: '#64748b', font: { size: 9, family: 'sans-serif' } }
           },
           y: {
             grid: { color: 'rgba(255, 255, 255, 0.03)' },
             ticks: {
               color: '#64748b',
-              font: { size: 9 },
+              font: { size: 9, family: 'sans-serif' },
               callback: (value) => `$${value}`
             }
           }
