@@ -1,57 +1,31 @@
-/* 檔名: styles.css
-   描述: 大富翁4：全球城市大地圖 11x11 完美環形自適應樣式控制表
+/* =======================================================
+   大富翁4：全球城市大地图 全局样式与 26x26 棋盘布局控制
    更新日期: 2026-06-22
-*/
+   ======================================================= */
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft YaHei", sans-serif;
-  background-color: #030712;
+  background-color: #0b0c10;
   -webkit-font-smoothing: antialiased;
+  color: #f1f5f9;
 }
 
-/* 完美支援自適應的 11x11 環形棋盤網格 */
-.grid-cols-11 {
-  grid-template-columns: repeat(11, minmax(0, 1fr));
-}
-.grid-rows-11 {
-  grid-template-rows: repeat(11, minmax(0, 1fr));
-}
+/* 26x26 Grid 大棋盘样式 */
+.grid-cols-26 { grid-template-columns: repeat(26, minmax(0, 1fr)); }
+.grid-rows-26 { grid-template-rows: repeat(26, minmax(0, 1fr)); }
 
-/* 棋盤格高密度極佳展示風格 */
-.board-tile {
-  transition: all 0.22s ease-in-out;
-  box-sizing: border-box;
-}
+.col-start-2 { grid-column-start: 2; }
+.col-end-26 { grid-column-end: 26; }
+.row-start-2 { grid-row-start: 2; }
+.row-end-26 { grid-row-end: 26; }
 
-.board-tile:hover {
-  transform: scale(1.03);
-  filter: brightness(1.15);
-  box-shadow: 0 4px 15px rgba(6, 182, 212, 0.25);
-  z-index: 10;
-}
+/* 炫彩物主高发光霓虹边框 */
+.neon-border-pink { border: 3px solid #ec4899 !important; box-shadow: 0 0 15px rgba(236, 72, 153, 0.45) !important; }
+.neon-border-blue { border: 3px solid #3b82f6 !important; box-shadow: 0 0 15px rgba(59, 130, 246, 0.45) !important; }
+.neon-border-green { border: 3px solid #22c55e !important; box-shadow: 0 0 15px rgba(34, 197, 94, 0.45) !important; }
+.neon-border-amber { border: 3px solid #f59e0b !important; box-shadow: 0 0 15px rgba(245, 158, 11, 0.45) !important; }
 
-/* 炫彩物主高發光霓虹邊框 */
-.neon-border-pink {
-  border: 2px solid #ec4899 !important;
-  box-shadow: 0 0 10px rgba(236, 72, 153, 0.45) !important;
-}
-
-.neon-border-blue {
-  border: 2px solid #3b82f6 !important;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.45) !important;
-}
-
-.neon-border-green {
-  border: 2px solid #22c55e !important;
-  box-shadow: 0 0 10px rgba(34, 197, 94, 0.45) !important;
-}
-
-.neon-border-amber {
-  border: 2px solid #f59e0b !important;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.45) !important;
-}
-
-/* 骰子動畫 */
+/* 骰子动画 */
 @keyframes diceRoll {
   0% { transform: rotate(0deg) scale(1); }
   30% { transform: rotate(140deg) scale(1.2); }
@@ -59,51 +33,49 @@ body {
   100% { transform: rotate(360deg) scale(1); }
 }
 
-.dice-rolling {
-  animation: diceRoll 0.5s ease-out infinite;
-}
+.dice-rolling { animation: diceRoll 0.5s ease-out infinite; }
 
-/* 隱藏滾動條 */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
+/* 隐藏滚动条 */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* 彈跳現金粒子飄動動畫氣泡 */
+/* =======================================================
+   💸 弹跳现金粒子飘动动画气泡
+   ======================================================= */
 @keyframes floatUp {
-  0% {
-    transform: translate(-50%, 0) scale(0.7);
-    opacity: 0;
-  }
-  15% {
-    transform: translate(-50%, -24px) scale(1.35);
-    opacity: 1;
-  }
-  80% {
-    transform: translate(-50%, -40px) scale(1.1);
-    opacity: 0.95;
-  }
-  100% {
-    transform: translate(-50%, -64px) scale(0.8);
-    opacity: 0;
-  }
+  0% { transform: translate(-50%, 0) scale(0.7); opacity: 0; }
+  15% { transform: translate(-50%, -24px) scale(1.35); opacity: 1; }
+  100% { transform: translate(-50%, -60px) scale(1); opacity: 0; }
 }
 
-.floating-money-node {
+.floating-cash {
   position: absolute;
-  font-weight: 900;
-  font-size: 16px;
-  animation: floatUp 1.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  animation: floatUp 1.2s ease-out forwards;
   pointer-events: none;
-  z-index: 9999;
-  font-family: "Impact", "Arial Black", sans-serif;
-  text-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.9),
-    0 0 6px rgba(0, 0, 0, 0.5);
+  font-weight: 900;
+  color: #34d399;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+  z-index: 100;
 }
 
-.money-gain { color: #22c55e; }
-.money-loss { color: #ef4444; }
+/* 棋盘格子基础属性 */
+.board-cell {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(30, 41, 59, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.board-cell:hover {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+/* 模态框遮罩層級修正 */
+.modal-overlay {
+  z-index: 50;
+  backdrop-filter: blur(8px);
+}
