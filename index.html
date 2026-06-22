@@ -83,10 +83,11 @@
 
       <div class="mb-6 bg-slate-800/50 border border-slate-700/60 p-4 rounded-xl text-xs text-slate-300 space-y-2.5 leading-relaxed shadow-sm">
         <div class="font-bold text-emerald-400 mb-1 text-sm">⚖️ 资本硬核法则：</div>
-        <div>1. 城市地价分为四档: <span class="text-white font-bold">$3500, $3000, $2500, $2000</span>。</div>
-        <div>2. 基础过路费始终维持为当前地价的 <span class="text-white font-bold">10%</span>。每次升级费用等于当前过路费。升级无上限！</div>
-        <div>3. <span class="text-rose-400 font-bold">恶意收购</span>：支付高达当前过路费 <span class="text-white font-bold">20倍</span> 的现金（即总地价的 2倍），可强行从对手手中夺走城市产权！</div>
-        <div>4. <span class="text-amber-400 font-bold">现金理财</span>：回合开始时，自动获取<span class="text-white font-bold">流转现金 0.5%</span>的无风险利息。</div>
+        <div>1. 基础过路费始终维持为当前地价的 <span class="text-white font-bold">10%</span>。每次升级费用等于当前过路费。升级无上限！</div>
+        <div>2. <span class="text-rose-400 font-bold">恶意收购</span>：支付高达当前过路费 <span class="text-white font-bold">20倍</span> 的现金，可强行从对手手中夺走城市产权！</div>
+        <div>3. <span class="text-red-400 font-bold">无情税金</span>：所有现金收入（起点红利、过路费、被收购赔款、利息等）均需缴纳 <span class="text-white font-bold">20%</span> 的高额所得税！</div>
+        <div>4. <span class="text-amber-400 font-bold">现金理财</span>：回合开始时，自动获取<span class="text-white font-bold">流转现金 0.5%</span>的无风险利息（需缴税）。</div>
+        <div>5. <span class="text-purple-400 font-bold">命运转盘</span>：触发 <span class="text-white font-bold">5% 资产波动</span>（房产升值/贬值）或现金赏罚（奖励需缴税）。</div>
       </div>
 
       <!-- 动态分配容器 -->
@@ -324,8 +325,8 @@
       const logs = document.getElementById("game-logs");
       if (!logs) return;
       const item = document.createElement("div");
-      item.className = "p-2 mb-1.5 bg-slate-900/50 rounded-lg border border-slate-800/80 leading-relaxed font-mono shadow-sm " + customClass;
-      item.textContent = `[第 ${roundCount} 轮] ${text}`;
+      item.className = "p-2 mb-1.5 bg-slate-900/50 rounded-lg border border-slate-800/80 leading-relaxed font-mono shadow-inner " + customClass;
+      item.innerHTML = `[第 ${roundCount} 轮] ${text}`;
       logs.appendChild(item);
       logs.scrollTop = logs.scrollHeight;
     }
@@ -508,7 +509,7 @@
       });
     }
 
-    // --- 💰 浮动金币特效 ---
+    // --- 💰 浮动金币特效与核心加钱/扣钱(含 20% 税率)逻辑 ---
     function showFloatingMoney(playerId, amount) {
       if (amount === 0) return;
       const badge = document.getElementById("player-badge-" + playerId);
@@ -540,6 +541,19 @@
       updatePlayerRanksUI();
     }
 
+    // 核心入账函数：所有正收益都必须交 20% 税
+    function addIncome(player, grossAmount, sourceDesc) {
+      if (grossAmount <= 0) return;
+      const tax = Math.floor(grossAmount * 0.20);
+      const net = grossAmount - tax;
+      
+      player.cash += net;
+      showFloatingMoney(player.id, net);
+      updatePlayerRanksUI();
+      
+      addLog(`⚖️ <span class="text-amber-400">税务局</span>：[${player.name}] 的${sourceDesc}收入 $${grossAmount.toLocaleString()}，缴纳 20% 所得税 <span class="text-rose-400">-$${tax.toLocaleString()}</span>，净入账 <span class="text-emerald-400">+$${net.toLocaleString()}</span>`, "text-slate-400");
+    }
+
     // --- 回合循环引擎 (0.5% 现金理财利息) ---
     function startPlayerTurn() {
       const p = players[currentTurnIndex];
@@ -556,11 +570,11 @@
       updatePlayerPositionsUI();
       updatePlayerRanksUI();
 
-      // 0.5% 现金生息结算 (仅按可用现金计算)
+      // 0.5% 现金生息结算 (计入 20% 所得税)
       const interest = Math.floor(p.cash * 0.005);
       if(interest > 0) {
-        adjustPlayerCash(p, interest);
-        addLog(`🏦 现金理财：[${p.name}] 获得可用资金 0.5% 的利息 +$${interest.toLocaleString()}`, "text-emerald-400 font-bold");
+        addLog(`🏦 现金理财：[${p.name}] 触发活期利息收益...`, "text-emerald-400 font-bold");
+        addIncome(p, interest, "理财利息");
         if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
       }
 
@@ -615,8 +629,8 @@
       const moveInterval = setInterval(() => {
         player.position = (player.position + 1) % MAP_LENGTH;
         if (player.position === 0 && currentStep < steps - 1) {
-          adjustPlayerCash(player, passStartBonus);
-          addLog(`🏪 [${player.name}] 路过起点，领取资本红利：+$${passStartBonus.toLocaleString()}！`, "text-emerald-400 font-bold");
+          addLog(`🏪 [${player.name}] 路过起点，触发资本红利...`, "text-emerald-400 font-bold");
+          addIncome(player, passStartBonus, "起点红利");
           if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
         }
         updatePlayerPositionsUI();
@@ -645,8 +659,8 @@
       }
 
       if (tile.type === "START") {
-        adjustPlayerCash(player, passStartBonus);
-        addLog(`🏪 [${player.name}] 精确降落起点！下发双倍红利：+$${passStartBonus.toLocaleString()}！`, "text-emerald-400 font-bold");
+        addLog(`🏪 [${player.name}] 精确降落起点，触发双倍红利...`, "text-emerald-400 font-bold");
+        addIncome(player, passStartBonus, "精确降落起点双倍红利");
         if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
         prepareEndTurn();
         return;
@@ -678,9 +692,12 @@
       addLog(`💸 [${renter.name}] 踩中 [${owner.name}] 的城市，交纳过路费 $${finalRent.toLocaleString()}。`, "text-rose-400 font-bold");
       
       if (renter.cash >= finalRent) {
+        // 付钱方照常扣款
         adjustPlayerCash(renter, -finalRent);
-        adjustPlayerCash(owner, finalRent);
-        addLog(`💰 [${renter.name}] 支付了过路费给 [${owner.name}]！`, "text-emerald-400");
+        // 收钱方缴纳所得税
+        addLog(`💰 [${renter.name}] 支付了过路费，资金汇入 [${owner.name}] 的账户！`, "text-emerald-400");
+        addIncome(owner, finalRent, "地段租金");
+        
         if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
 
         // 强购机制判定：如果付完租金后，剩余现金足以支付 20倍 的租金，触发强购契约！
@@ -691,59 +708,41 @@
           prepareEndTurn();
         }
       } else {
-        triggerLiquidationToPay(renter, owner, finalRent);
+        // 现金不足，直接破产出局
+        declareBankruptcy(renter, owner, finalRent);
       }
     }
 
-    function triggerLiquidationToPay(renter, creditor, debt) {
-      addLog(`🚨 [${renter.name}] 现金见底，启动房产权破产级折卖清算以偿还债务！`, "text-rose-500 font-bold");
-      
-      for (let i = 0; i < mapStates.length; i++) {
-        const state = mapStates[i];
-        if (state.owner === renter.id) {
-          const tile = TILE_DEFS[i];
-          const refundPrice = Math.floor(state.currentValue * 0.7);
-          
-          state.owner = null;
-          state.level = 0;
-          state.currentValue = tile.cost; 
-          adjustPlayerCash(renter, refundPrice);
-          
-          addLog(`🏘️ 强制清盘：折卖 [${tile.name}] 产权，变现止损: +$${refundPrice.toLocaleString()}`);
-          updatePropertiesUI();
-
-          if (renter.cash >= debt) break;
-        }
-      }
-
-      if (renter.cash >= debt) {
-        adjustPlayerCash(renter, -debt);
-        adjustPlayerCash(creditor, debt);
-        addLog(`✅ [${renter.name}] 清盘结束，交齐路费，度过破产危机。`, "text-emerald-400 font-bold");
-        prepareEndTurn();
-      } else {
-        declareBankruptcy(renter, creditor);
-      }
-    }
-
-    function declareBankruptcy(player, creditor) {
+    function declareBankruptcy(player, creditor, debt) {
       player.isBankrupt = true;
-      addLog(`💀 帝国陨落！[${player.name}] 土地售罄仍资不抵债，正式宣告破产出局！`, "text-red-500 font-bold");
-      if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
-
+      
+      // 如果是被索要过路费而破产，把身上仅剩的残金全部搜刮给债主 (需缴税)
       if (player.cash > 0 && creditor) {
         const leftover = player.cash;
         adjustPlayerCash(player, -leftover);
-        adjustPlayerCash(creditor, leftover);
+        addIncome(creditor, leftover, "破产接管残金");
+      } else if (player.cash > 0) {
+        // 如果是系统税收/惩罚导致破产，剩余资金充公消失
+        adjustPlayerCash(player, -player.cash);
       }
 
+      addLog(`💀 帝国陨落！[${player.name}] 现金断裂，无法支付 $${debt ? debt.toLocaleString() : "账单"}，正式宣告破产出局！所有土地将被充公！`, "text-red-500 font-bold");
+      if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
+
+      // 所有土地充公，变回无主状态
+      let confiscatedCount = 0;
       mapStates.forEach(state => {
         if (state.owner === player.id) {
           state.owner = null;
           state.level = 0;
-          state.currentValue = TILE_DEFS[state.id].cost;
+          state.currentValue = TILE_DEFS[state.id].cost; // 恢复原始地价
+          confiscatedCount++;
         }
       });
+
+      if (confiscatedCount > 0) {
+        addLog(`🏛️ 系统公告：[${player.name}] 名下 ${confiscatedCount} 处地产已被剥夺产权，重新向市场开放认购！`, "text-amber-500 font-bold");
+      }
 
       updatePropertiesUI();
       updatePlayerPositionsUI();
@@ -833,9 +832,10 @@
             addLog(`🏢 复利攀升：[${player.name}] 支付 $${requiredCash.toLocaleString()} 加建 [${tile.name}] (Lv.${state.level})！`, "text-cyan-400 font-bold");
           } else if (actionType === "takeover") {
             const oldOwner = players.find(p => p.id === extra.ownerId);
-            adjustPlayerCash(oldOwner, requiredCash); // 把收购款转给原房主
             state.owner = player.id;
-            addLog(`⚔️ 恶意收购：[${player.name}] 豪掷 $${requiredCash.toLocaleString()}，从 [${oldOwner.name}] 手中强行夺走 [${tile.name}] 的产权！`, "text-fuchsia-400 font-bold");
+            addLog(`⚔️ 恶意收购：[${player.name}] 豪掷 $${requiredCash.toLocaleString()} 夺走 [${tile.name}]，[${oldOwner.name}] 获得赔付...`, "text-fuchsia-400 font-bold");
+            // 被收购方获得全额赔款，并缴纳 20% 所得税
+            addIncome(oldOwner, requiredCash, "被强制收购赔付");
           }
 
           if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
@@ -851,54 +851,103 @@
       prepareEndTurn();
     }
 
-    // --- 命运黑天鹅 (总资产 5% 动态核算机制) ---
+    // --- 命运黑天鹅 (总资产 5% 动态核算，包含资产与现金) ---
     function triggerRandomEvent(player) {
       const netWorth = calculateNetWorth(player);
       const amount = Math.floor(netWorth * 0.05);
 
       const events = [
         {
-          title: "房地产税金稽查 💸",
-          text: `帝国资产规模触发红线，税务局强制课征总资产 5% 房产税：-$${amount.toLocaleString()}！`,
-          action: () => {
-            adjustPlayerCash(player, -amount);
-            if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
-          }
-        },
-        {
           title: "世界城市博览会奖励 🎁",
-          text: `您名下的基建荣获世界最佳地产奖，政府下发总资产 5% 补贴：+$${amount.toLocaleString()}！`,
+          text: `您的基建荣获世界最佳地产奖，政府下发总资产 5% 现金红利：+$${amount.toLocaleString()}！`,
           action: () => {
-            adjustPlayerCash(player, amount);
+            addIncome(player, amount, "政府参展红利");
             if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
-          }
-        },
-        {
-          title: "恶性通货膨胀风暴 💣",
-          text: `全球金融危机，法币贬值，资产缩水强制蒸发总资产 5% 现金：-$${amount.toLocaleString()}！`,
-          action: () => {
-            adjustPlayerCash(player, -amount);
-            if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
+            prepareEndTurn();
           }
         },
         {
           title: "海外投资分红 💎",
-          text: `海外资产大丰收，套现获得相当于总资产 5% 的巨额红利：+$${amount.toLocaleString()}！`,
+          text: `海外资产大丰收，获得相当于总资产 5% 的巨额现金红利：+$${amount.toLocaleString()}！`,
           action: () => {
-            adjustPlayerCash(player, amount);
+            addIncome(player, amount, "海外投资分红");
             if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
+            prepareEndTurn();
+          }
+        },
+        {
+          title: "房地产繁荣期 📈 (资产暴涨)",
+          text: `当地房地产市场繁荣热钱涌入，您名下所有地产的估值瞬间上涨 20%！`,
+          action: () => {
+            let hasProp = false;
+            mapStates.forEach(st => {
+              if (st.owner === player.id) {
+                st.currentValue = Math.floor(st.currentValue * 1.2);
+                hasProp = true;
+              }
+            });
+            if(hasProp) {
+              updatePropertiesUI();
+              addLog(`📈 估值暴涨：[${player.name}] 旗下所有房产市值拉升 20%！`, "text-emerald-400 font-bold");
+            }
+            if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
+            prepareEndTurn();
+          }
+        },
+        {
+          title: "老旧城区改造 📉 (资产缩水)",
+          text: `市政规划变更，导致您名下所有地产被边缘化，估值骤跌 20%！`,
+          action: () => {
+            let hasProp = false;
+            mapStates.forEach(st => {
+              if (st.owner === player.id) {
+                st.currentValue = Math.floor(st.currentValue * 0.8);
+                hasProp = true;
+              }
+            });
+            if(hasProp) {
+              updatePropertiesUI();
+              addLog(`📉 估值缩水：[${player.name}] 旗下所有房产市值崩跌 20%！`, "text-rose-500 font-bold");
+            }
+            if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
+            prepareEndTurn();
+          }
+        },
+        {
+          title: "房地产税金稽查 💸",
+          text: `帝国资产规模触发红线，税务局强制课征总资产 5% 巨额税收：-$${amount.toLocaleString()}！`,
+          action: () => {
+            if (player.cash >= amount) {
+               adjustPlayerCash(player, -amount);
+               if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
+               prepareEndTurn();
+            } else {
+               declareBankruptcy(player, null, amount);
+            }
+          }
+        },
+        {
+          title: "恶性通货膨胀风暴 💣",
+          text: `全球金融危机，法币贬值，强制蒸发总资产 5% 的可用现金：-$${amount.toLocaleString()}！`,
+          action: () => {
+             if (player.cash >= amount) {
+               adjustPlayerCash(player, -amount);
+               if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
+               prepareEndTurn();
+            } else {
+               declareBankruptcy(player, null, amount);
+            }
           }
         }
       ];
 
       const selected = events[Math.floor(Math.random() * events.length)];
-      selected.action();
-
       showEventModal(selected.title, `[${player.name}] 命运交响曲：<br><br>${selected.text}`, "🎡");
       addLog(`🎰 大转盘：[${player.name}] 触发命运事件 [${selected.title}]`, "text-purple-400 font-bold");
       
+      // 注意：结束回合的调用移动到了 action 内部，以正确处理因事件导致破产的情况
+      selected.action(); 
       updatePlayerRanksUI();
-      prepareEndTurn();
     }
 
     // --- 自动化回合控制 ---
