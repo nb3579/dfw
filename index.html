@@ -10,10 +10,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body class="text-gray-100 bg-slate-950 p-2 sm:p-4 font-sans antialiased min-h-screen flex flex-col justify-between overflow-hidden">
+<body class="text-gray-100 bg-slate-950 p-1 sm:p-2 font-sans antialiased min-h-screen flex flex-col justify-center items-center overflow-hidden">
 
   <!-- 游戏主容器 -->
-  <div id="app" class="w-full mx-auto flex-grow flex flex-col justify-center max-h-screen">
+  <div id="app" class="w-full h-full flex items-center justify-center">
     
     <!-- 1. 游戏初始化/角色选择界面 -->
     <div id="setup-screen" class="max-w-xl mx-auto my-auto bg-slate-900/95 rounded-[2.5rem] p-6 md:p-8 shadow-2xl border border-slate-800 backdrop-blur-md w-full">
@@ -45,92 +45,83 @@
     </div>
 
     <!-- 2. 核心大游戏主战场界面（自适应浏览器窗口，防溢出） -->
-    <div id="game-screen" class="hidden flex flex-col lg:flex-row gap-4 h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] w-full overflow-hidden">
-      
-      <!-- 左侧区域：完美自适应屏幕的 11x11 环形大棋盘容器 -->
-      <div class="flex-grow bg-slate-900/20 border border-slate-900/60 rounded-[2rem] p-2 flex items-center justify-center relative shadow-2xl overflow-hidden">
-        <!-- 自动适配宽高比，始终完美显示，绝不超出当前窗口 -->
-        <div id="board-container" class="grid grid-cols-11 grid-rows-11 gap-1 p-1 bg-slate-950/90 rounded-[1.5rem] w-full h-full aspect-square max-h-[82vh] max-w-[82vh] relative">
+    <div id="game-screen" class="hidden h-screen w-screen flex items-center justify-center overflow-hidden">
+      <!-- 自动适配宽高比，始终完美显示，最外圈是城市，全部信息在圈内展示 -->
+      <div id="board-container" class="grid grid-cols-11 grid-rows-11 gap-1 p-1 bg-slate-950/90 border border-slate-900 rounded-[1.5rem] relative">
+        
+        <!-- ==========================================
+             核心大厅：所有状态、排行榜、时时彩、日志装在环中央！
+             ========================================== -->
+        <div class="col-start-2 col-end-11 row-start-2 row-end-11 bg-slate-900/95 border border-slate-850 rounded-[1rem] p-3 flex flex-col justify-between overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.85)] z-0 relative">
           
-          <!-- ==========================================
-               核心大厅：各种游戏交互控制全部装在环中央！
-               ========================================== -->
-          <div class="col-start-2 col-end-11 row-start-2 row-end-11 bg-slate-900/95 border border-slate-850 rounded-[1.5rem] p-4 flex flex-col justify-between overflow-hidden shadow-[inset_0_0_40px_rgba(0,0,0,0.85)] z-0 relative">
+          <div class="grid grid-cols-12 gap-3 h-full w-full">
             
-            <!-- 回合行动核心指示器 -->
-            <div class="bg-slate-950/80 border border-slate-850 p-2.5 rounded-xl flex items-center justify-between shadow">
-              <div class="flex items-center gap-2">
-                <div id="current-player-avatar" class="text-3xl filter drop-shadow-[0_0_6px_rgba(255,255,255,0.15)] animate-bounce">👧</div>
-                <div>
-                  <span id="current-player-name" class="text-sm font-black text-white block leading-none">加载中...</span>
-                  <span id="quick-tip" class="text-[9px] text-cyan-400 font-bold">准备掷骰子</span>
+            <!-- 大厅左半侧：全球财阀风云榜 (资产名字右侧合流) -->
+            <div class="col-span-5 flex flex-col justify-between h-full bg-slate-950/60 p-2 border border-slate-850 rounded-xl">
+              <div class="text-[9px] font-black text-slate-500 uppercase tracking-widest pl-1 mb-1 border-b border-slate-850 pb-1 flex justify-between">
+                <span>🏆 实时资产风云榜</span>
+                <span class="text-cyan-400">实时</span>
+              </div>
+              <div id="player-ranks" class="flex-grow space-y-1.5 overflow-y-auto no-scrollbar justify-center flex flex-col">
+                <!-- 动态排行榜卡片 -->
+              </div>
+            </div>
+
+            <!-- 大厅右半侧：行动中枢 + 时时彩 + 日志播报 -->
+            <div class="col-span-7 flex flex-col justify-between h-full gap-2">
+              
+              <!-- 🎲 掷骰行动与当前状态融为一体 (孙小美 停在 [北京]) -->
+              <div class="bg-slate-950/80 border border-slate-850 p-2 rounded-xl flex items-center justify-between gap-2 shadow">
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <div id="current-player-avatar" class="text-3xl filter drop-shadow animate-bounce">👧</div>
+                  <div>
+                    <span id="current-player-name" class="text-xs font-black text-white block leading-none">加载中...</span>
+                    <span id="quick-tip" class="text-[9px] text-cyan-400 font-bold block mt-0.5">准备掷骰</span>
+                  </div>
+                </div>
+
+                <!-- 骰子与掷骰大按钮合一 -->
+                <div class="flex items-center gap-1.5">
+                  <div id="dice-element" class="w-10 h-16 bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 text-white text-2xl font-black rounded-lg flex items-center justify-center shadow-md select-none cursor-pointer">🎲</div>
+                  <div class="flex flex-col gap-1">
+                    <button id="btn-roll" onclick="triggerDiceRoll()" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-[9px] px-2 py-1 rounded transition-all shadow">
+                      掷骰
+                    </button>
+                    <button id="btn-end-turn" onclick="endTurn()" disabled class="bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 font-black text-[9px] px-2 py-1 rounded transition-all">
+                      结束
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div class="text-right">
-                <span id="round-counter" class="text-[10px] font-black bg-slate-800 text-slate-300 px-2 py-1 rounded">第 1 轮</span>
-              </div>
-            </div>
 
-            <!-- 🎲 骰子动作控制区域 -->
-            <div class="grid grid-cols-12 gap-3 items-center bg-slate-950/40 p-2.5 rounded-xl border border-slate-850/60">
-              <div class="col-span-3 flex justify-center">
-                <div id="dice-element" class="w-12 h-12 bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 text-white text-3xl font-black rounded-xl flex items-center justify-center shadow-md select-none cursor-pointer">🎲</div>
-              </div>
-              <div class="col-span-9 flex flex-col gap-1.5">
-                <button id="btn-roll" onclick="triggerDiceRoll()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-[10px] py-1.5 rounded-lg transition-all shadow-md">
-                  掷 骰 前 进
-                </button>
-                <button id="btn-end-turn" onclick="endTurn()" disabled class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 font-black text-[10px] py-1.5 rounded-lg transition-all">
-                  结 束 回 合
+              <!-- 🎰 时时彩系统终端 -->
+              <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-850/60 flex items-center justify-between gap-2">
+                <div class="text-[9px]">
+                  <div class="font-black text-yellow-500 flex items-center gap-1 leading-none">🎰 时时彩奖池 <span id="lottery-pool" class="text-emerald-400 font-mono font-black ml-1">$5,000</span></div>
+                  <div class="flex gap-2 text-[8px] text-slate-500 mt-1">
+                    <span id="lottery-countdown">倒计时: 10轮</span>
+                    <div>投注: <span id="lottery-my-num" class="text-yellow-400 font-bold">无</span></div>
+                  </div>
+                </div>
+                <button id="btn-buy-lottery" onclick="buyLotteryTicket()" class="bg-yellow-500 hover:bg-yellow-400 disabled:bg-slate-800 disabled:text-slate-600 text-slate-950 font-black text-[9px] px-3 py-2 rounded-lg transition-all shadow shrink-0">
+                  买彩票 ($500)
                 </button>
               </div>
-            </div>
 
-            <!-- 🎰 时时彩系统终端 -->
-            <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-850/60">
-              <div class="flex justify-between items-center text-[10px] mb-1">
-                <span class="font-black text-yellow-500 flex items-center gap-1">🎰 时时彩奖池</span>
-                <span id="lottery-pool" class="font-black text-emerald-400 font-mono">$5,000</span>
+              <!-- 📜 战局实时日志直接装入控制台 -->
+              <div class="bg-slate-950/90 border border-slate-850 p-1.5 rounded-xl flex flex-col h-[75px] shrink-0 overflow-hidden">
+                <div class="text-[8px] font-black text-slate-500 uppercase mb-1 flex justify-between items-center border-b border-slate-850 pb-0.5">
+                  <span>实时战局播报日志</span>
+                  <button onclick="clearLogs()" class="hover:text-slate-300 text-[8px]">清空</button>
+                </div>
+                <div id="game-logs" class="flex-grow overflow-y-auto text-[9px] font-medium space-y-0.5 text-slate-400 no-scrollbar"></div>
               </div>
-              <div class="flex items-center justify-between text-[8px] text-slate-400 mb-1.5">
-                <span id="lottery-countdown">开奖倒计时: 10轮</span>
-                <div>投注: <span id="lottery-my-num" class="text-yellow-400 font-bold">无</span></div>
-              </div>
-              <button id="btn-buy-lottery" onclick="buyLotteryTicket()" class="w-full bg-yellow-500 hover:bg-yellow-400 disabled:bg-slate-800 disabled:text-slate-600 text-slate-950 font-black text-[9px] py-1 rounded-md transition-all shadow">
-                花费 $500 购买彩票
-              </button>
-            </div>
 
-            <!-- 📜 战局实时日志直接装入控制台 -->
-            <div class="bg-slate-950/90 border border-slate-850 p-2 rounded-xl flex flex-col h-[70px] shrink-0">
-              <div class="text-[8px] font-black text-slate-500 uppercase mb-1 flex justify-between items-center border-b border-slate-850 pb-0.5">
-                <span>实时战局播报日志</span>
-                <button onclick="clearLogs()" class="hover:text-slate-300">清空</button>
-              </div>
-              <div id="game-logs" class="flex-grow overflow-y-auto text-[9px] font-medium space-y-0.5 text-slate-400 no-scrollbar"></div>
             </div>
-
           </div>
-          <!-- 环形棋盘格将由js动态挂载在外圈 -->
-        </div>
-      </div>
 
-      <!-- 右侧侧边栏：财富排名专栏 (自适应，数据高亮，右侧合并展现) -->
-      <div class="w-full lg:w-[360px] shrink-0 flex flex-col gap-3 h-full max-h-full overflow-y-auto no-scrollbar pr-1 py-1">
-        
-        <!-- 📊 动态财富资产排行榜 -->
-        <div class="flex-grow flex flex-col gap-2 min-h-[300px]">
-          <div class="text-[11px] font-black text-slate-500 uppercase tracking-wider pl-1">全球财阀实时风云榜</div>
-          <div id="player-ranks" class="space-y-2.5 overflow-y-auto no-scrollbar">
-            <!-- 动态卡片 -->
-          </div>
         </div>
-
-        <div class="bg-slate-900/40 border border-slate-850/80 p-3.5 rounded-2xl text-[10px] text-slate-400 leading-relaxed">
-          <span class="text-cyan-400 font-bold">环形新大陆规则说明：</span>
-          <p class="mt-1">大富翁4重塑版采用40格环形首尾相连经典布局，当踩中神庙⛩️时，允许斥资总资产的 10% 购买特殊神仙附体。每 10 回合由中央大厅进行时时彩乐透开奖，大奖惊喜不断！</p>
-        </div>
-
+        <!-- 环形棋盘格将由js动态挂载在外圈 -->
       </div>
     </div>
 
