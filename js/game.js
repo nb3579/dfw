@@ -22,39 +22,68 @@ const GOD_TURNS = 5;
    更新日期: 2026-06-22
 */
 
-// 定义缺失的玩家模版，修复 game.js:124 报错
+// 【修复：将 icon 统一更正为 avatar，并补全 textCol 避免读取 undefined】
 const PLAYER_TEMPLATES = [
-  { id: 'sun', name: '孙小美', icon: '👧', color: 'pink' },
-  { id: 'money', name: '钱夫人', icon: '👩‍💼', color: 'blue' },
-  { id: 'land', name: '阿土伯', icon: '👴', color: 'green' },
-  { id: 'baby', name: '金贝贝', icon: '👶', color: 'amber' }
+  { id: 'sun', name: '孙小美', avatar: '👧', color: 'bg-pink-500', textCol: 'text-pink-400' },
+  { id: 'money', name: '钱夫人', avatar: '👩‍💼', color: 'bg-blue-500', textCol: 'text-blue-400' },
+  { id: 'land', name: '阿土伯', avatar: '👴', color: 'bg-green-500', textCol: 'text-green-400' },
+  { id: 'baby', name: '金贝贝', avatar: '👶', color: 'bg-amber-500', textCol: 'text-amber-400' }
 ];
 
-// 初始化游戏设置
-function renderSetupScreen() {
-    console.log("渲染玩家设置屏幕...");
-    if (typeof PLAYER_TEMPLATES === 'undefined') {
-        console.error("PLAYER_TEMPLATES 未定义，请检查加载顺序。");
-        return;
-    }
-    // 渲染逻辑继续...
+// --- 🛠️ 补齐缺失的核心辅助工具函数 ---
+
+// 1. 获取房屋/地产级别或特殊格子的 Emoji 视觉标识
+function getPropertyEmoji(type, level) {
+  if (type !== "LAND") {
+    if (type === "START") return "🏁";
+    if (type === "HOSPITAL") return "🏥";
+    if (type === "PRISON") return "🚓";
+    if (type === "GOD_SHRINE") return "⛩️";
+    if (type === "CHANCE") return "🎁";
+    if (type === "DESTINY") return "🎡";
+    return "🧱";
+  }
+  switch (level) {
+    case 0: return "🌳";
+    case 1: return "🏠";
+    case 2: return "🏡";
+    case 3: return "🏢";
+    case 4: return "🏣";
+    case 5: return "🏰";
+    default: return "🏠";
+  }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 确保初始化调用
-    console.log("DOM 已加载，初始化游戏...");
-    // 模拟调用
-    renderSetupScreen();
-});
+// 2. 获取神明徽章 Emoji
+function getGodBadgeEmoji(type) {
+  if (type === "wealth") return "😇";
+  if (type === "earth") return "🧙";
+  if (type === "wisdom") return "🧠";
+  if (type === "misfortune") return "😈";
+  return "✨";
+}
 
-// 提示：针对 (索引):64 的 Tailwind 警告，建议在生产环境使用 PostCSS 编译
-// 针对 net::ERR_ADDRESS_INVALID 错误，请检查您的资源路径是否指向了正确的本地服务器地址或相对路径
+// 3. 获取骰子点数外观
+function getDiceFace(value) {
+  const faces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+  return faces[value - 1] || "🎲";
+}
+
+// 4. 计算动态地租（随房屋等级翻倍）
+function calculateRent(tileId) {
+  const tile = TILE_DEFS[tileId];
+  const state = mapStates[tileId];
+  if (!tile || !state || tile.type !== "LAND") return 0;
+  if (state.level <= 1) return tile.rent;
+  return tile.rent * Math.pow(2, state.level - 1);
+}
+
 // --- 85个全球世界城市名录库 (用于填充100个格子的LAND类型) ---
 const GLOBAL_CITIES = [
   "北京", "东京", "纽约", "伦敦", "巴黎", "罗马", "悉尼", "柏林", "多伦多", "新加坡", 
   "迪拜", "莫斯科", "首尔", "上海", "深圳", "香港", "曼谷", "孟买", "伊斯坦布尔", "里约", 
   "开普敦", "阿姆斯特丹", "日内瓦", "维也纳", "马德里", "里斯本", "斯德哥尔摩", "奥斯陆", "哥本哈根", "布鲁塞尔", 
-  "雅典", "布拉格", "华沙", "布达佩斯", "基辅", "都柏林", "赫尔辛基", "雷克雅未克", "马尼拉", "雅加达", 
+  "雅典", "布拉格", "华沙", "布达佩斯", "基辅", "都屈林", "赫尔辛基", "雷克雅未克", "马尼拉", "雅加达", 
   "吉隆坡", "河内", "温哥华", "洛杉矶", "芝加哥", "旧金山", "波士顿", "西雅图", "迈阿密", "休斯敦", 
   "休斯敦", "拉斯维加斯", "火奴鲁鲁", "安克雷奇", "墨西哥城", "哈瓦那", "波哥大", "利马", "圣地亚哥", "布宜诺斯艾利斯", 
   "卡萨布兰卡", "内罗毕", "拉各斯", "约翰内斯堡", "奥克兰", "惠灵顿", "基督城", "大阪", "京都", "名古屋", 
@@ -67,37 +96,30 @@ const TILE_DEFS = [];
 function generate100Tiles() {
   let cityIndex = 0;
   
-  // 建立 26x26 闭环周长的 100 个格子
   for (let i = 0; i < 100; i++) {
     let col = 0;
     let row = 0;
     
-    // 棋盘周长坐标算式 (0 to 99)
     if (i <= 25) {
-      // 顶边 Row 0, Col 0 to 25
       col = i;
       row = 0;
     } else if (i > 25 && i <= 49) {
-      // 右边 Col 25, Row 1 to 24
       col = 25;
       row = i - 25;
     } else if (i > 49 && i <= 75) {
-      // 底边 Row 25, Col 25 down to 0
       col = 25 - (i - 50);
       row = 25;
     } else {
-      // 左边 Col 0, Row 24 down to 1
       col = 0;
       row = 25 - (i - 75);
     }
 
-    // 格子地带分类
     let type = "LAND";
     let name = "";
     let color = "from-cyan-500 to-blue-600 font-black";
     let desc = "世界商业城市";
-    let cost = 1000 + (i * 20); // 阶梯地价
-    let rent = 150 + (i * 5);   // 阶梯过路费
+    let cost = 1000 + (i * 20); 
+    let rent = 150 + (i * 5);   
 
     if (i === 0) {
       type = "START";
@@ -120,16 +142,13 @@ function generate100Tiles() {
       color = "bg-amber-600";
       desc = "花费 10% 资产购买随机神力";
     } else if (i === 6 || i === 18 || i === 31 || i === 44 || i === 56 || i === 68 || i === 81 || i === 93) {
-      // 机会与命运格
       type = Math.random() > 0.5 ? "CHANCE" : "DESTINY";
       name = type === "CHANCE" ? "财富机会 🎁" : "宿命大转 🎡";
       color = "bg-purple-600";
       desc = "未知的宿命或意外收支";
     } else {
-      // 城市地产
       name = GLOBAL_CITIES[cityIndex] || "新都市";
       cityIndex++;
-      // 根据城市给与色彩组
       const colors = [
         "from-pink-500 to-pink-600 font-bold",
         "from-yellow-500 to-amber-500 font-bold",
@@ -146,7 +165,7 @@ function generate100Tiles() {
 }
 generate100Tiles();
 
-// --- 初始成员设置逻辑 (安全隔离 Cloudflare 转义问题) ---
+// --- 初始成员设置逻辑 ---
 function renderSetupScreen() {
   const listContainer = document.getElementById("player-setup-list");
   if (!listContainer) return;
@@ -245,11 +264,11 @@ function startGame() {
         textCol: tpl.textCol,
         cash: initCash,
         position: 0,
-        god: null, // null | { type: 'wealth'|'earth'|'wisdom', turnsLeft: 5 }
+        god: null, 
         isBankrupt: false,
         isAI: typeVal === "ai",
         skipTurns: 0,
-        hasExtraRoll: false // 智慧神专享
+        hasExtraRoll: false 
       });
     }
   });
@@ -263,7 +282,6 @@ function startGame() {
     return { id: tile.id, owner: null, level: 0 };
   });
 
-  // 初始化彩票库
   lotteryPool = 5000;
   lotteryTickets = {};
 
@@ -397,7 +415,6 @@ function startPlayerTurn() {
   document.getElementById("current-player-name").textContent = p.name;
   document.getElementById("round-counter").textContent = "第 " + roundCount + " 轮";
 
-  // 同步更新彩票界面
   document.getElementById("lottery-pool").textContent = "$" + lotteryPool.toLocaleString();
   document.getElementById("lottery-countdown").textContent = "开奖倒计时: " + (10 - (roundCount % 10)) + "轮";
   
@@ -425,7 +442,6 @@ function startPlayerTurn() {
     return;
   }
 
-  // 智慧神额外特权清除
   p.hasExtraRoll = false;
 
   if (p.god) {
@@ -440,7 +456,6 @@ function startPlayerTurn() {
 
   document.getElementById("quick-tip").textContent = "轮到 [" + p.name + "] 操作。";
 
-  // AI 智能彩票投注行为
   if (p.isAI && !ticket && Math.random() > 0.6) {
     setTimeout(() => {
       aiBuyLottery(p);
@@ -470,7 +485,7 @@ function buyLotteryTicket() {
   if (p.isBankrupt || lotteryTickets[p.id]) return;
 
   if (p.cash >= 500) {
-    const randomNum = Math.floor(Math.random() * 50) + 1; // 1-50随机数
+    const randomNum = Math.floor(Math.random() * 50) + 1; 
     adjustPlayerCash(p, -500);
     lotteryTickets[p.id] = randomNum;
     lotteryPool += 500;
@@ -572,14 +587,12 @@ function evaluateLandingTile(player, tileId) {
     return;
   }
 
-  // ⛩️ 神庙明码现金购买神明
   if (tile.type === "GOD_SHRINE") {
     promptShrineModal(player);
     return;
   }
 
   if (tile.type === "LAND") {
-    // 土地公特权免疫
     if (state.owner !== null && state.owner !== player.id && player.god && player.god.type === "earth") {
       addLog("🧙 土地神显灵保佑！免付对手 [" + player.name + "] 城市过路费！", "text-green-400 font-bold");
       prepareEndTurn();
@@ -587,7 +600,6 @@ function evaluateLandingTile(player, tileId) {
     }
 
     if (state.owner === null) {
-      // 土地神免费圈地
       if (player.god && player.god.type === "earth") {
         state.owner = player.id;
         state.level = 1;
@@ -599,7 +611,6 @@ function evaluateLandingTile(player, tileId) {
         promptPropertyModal(tile, state, "buy");
       }
     } else if (state.owner === player.id) {
-      // 土地神免费升摩天大楼
       if (player.god && player.god.type === "earth") {
         if (state.level < 5) {
           state.level++;
@@ -619,7 +630,6 @@ function evaluateLandingTile(player, tileId) {
         }
       }
     } else {
-      // 支付租金
       collectRentLogic(player, state.owner, tileId);
     }
     return;
@@ -660,7 +670,6 @@ function collectRentLogic(renter, ownerId, tileId) {
 function triggerLiquidationToPay(renter, creditor, debt) {
   addLog("🚨 [" + renter.name + "] 现金不足以偿还债务，启动土地拆卖清算机制！", "text-rose-500 font-bold");
   
-  // 强制倒卖地产自救 (折价70%)
   for (let i = 0; i < mapStates.length; i++) {
     const state = mapStates[i];
     if (state.owner === renter.id) {
@@ -716,18 +725,6 @@ function declareBankruptcy(player, creditor) {
   prepareEndTurn();
 }
 
-function checkGameOver() {
-  const activePlayers = players.filter(p => !p.isBankrupt);
-  if (activePlayers.length === 1) {
-    const winner = activePlayers[0];
-    showEventModal("👑 帝国终极之主", `恭喜 [${winner.name}] 在这场跨越百个都市的环球大富翁大地图争霸战中，令所有财阀破产，问鼎世界首富！`, "🏆");
-    addLog(`🏆 争霸战宣告结束！环球首富头衔属于：[${winner.name}]！`, "text-yellow-400 font-bold");
-    
-    document.getElementById("btn-roll").disabled = true;
-    document.getElementById("btn-end-turn").disabled = true;
-  }
-}
-
 // --- 🏠 地产购置 Modal 弹窗 ---
 function promptPropertyModal(tile, state, actionType) {
   currentPropPending = { tile, state, actionType };
@@ -777,7 +774,8 @@ function promptPropertyModal(tile, state, actionType) {
 }
 
 function confirmPropertyAction(agree) {
-  document.getElementById("property-modal").classList.add("hidden");
+  const modal = document.getElementById("property-modal");
+  if (modal) modal.classList.add("hidden");
   if (!currentPropPending) return;
 
   const { tile, state, actionType } = currentPropPending;
@@ -808,10 +806,8 @@ function confirmPropertyAction(agree) {
   prepareEndTurn();
 }
 
-// --- ⛩️ 神仙庙购买附体神仙系统 (10% 资产标价) ---
 function promptShrineModal(player) {
   if (player.isAI) {
-    // AI 决策行为：如果总资产充裕，有 40% 几率购买智慧神，30%大财神，30%土地公
     const price = Math.floor(calculateNetWorth(player) * 0.1);
     if (player.cash >= price + 1000) {
       const roll = Math.random();
@@ -825,7 +821,6 @@ function promptShrineModal(player) {
     return;
   }
 
-  // 为人类更新三个神明在当前总资产下折合 10% 的实时现金标价
   const price = Math.floor(calculateNetWorth(player) * 0.1);
   document.getElementById("god-price-wealth").textContent = "$" + price.toLocaleString();
   document.getElementById("god-price-earth").textContent = "$" + price.toLocaleString();
@@ -852,7 +847,6 @@ function buyGod(godType) {
       turnsLeft: GOD_TURNS
     };
     
-    // 播放神明降临音效
     if (window.sound && typeof window.sound.playGodArrival === "function") window.sound.playGodArrival();
 
     const gName = getGodName(godType);
@@ -887,9 +881,8 @@ function prepareEndTurn() {
   const p = players[currentTurnIndex];
   updatePlayerRanksUI();
 
-  // 🧠 智慧神特权判定：如果附体且在本轮还没额外走过，给予多一次掷骰特权！
   if (p.god && p.god.type === "wisdom" && !p.hasExtraRoll && !p.isBankrupt && p.skipTurns === 0) {
-    p.hasExtraRoll = true; // 标明已获得并消耗这个特权
+    p.hasExtraRoll = true; 
     addLog("🧠 智慧神开启大智慧！【" + p.name + "】被恩赐额外多一次大行动回合！", "text-cyan-400 font-bold");
     document.getElementById("quick-tip").textContent = "【智慧神再赐一动】请 " + p.name + " 再次掷骰！";
     document.getElementById("btn-roll").disabled = false;
@@ -917,8 +910,6 @@ function endTurn() {
 
   if (currentTurnIndex === 0) {
     roundCount++;
-    
-    // 🎟️ 判定开奖时机 (每 10 轮在 Round 11, 21, 31... 发生开奖前清算)
     if (roundCount > 1 && (roundCount - 1) % 10 === 0) {
       drawLotteryJackpot();
     }
@@ -938,12 +929,10 @@ function nextTurn() {
   startPlayerTurn();
 }
 
-// 🎟️ 时时彩开奖中心开盘
 function drawLotteryJackpot() {
-  const winNum = Math.floor(Math.random() * 50) + 1; // 生成中奖号
+  const winNum = Math.floor(Math.random() * 50) + 1; 
   addLog("🎰 【环球时时彩中心】第 " + ((roundCount-1)/10) + " 届时时彩开盘了！当期中奖幸运数字为：[" + winNum + " 号]！", "text-yellow-400 font-extrabold");
 
-  // 寻找中奖玩家
   const winners = [];
   players.forEach(p => {
     if (!p.isBankrupt && lotteryTickets[p.id] === winNum) {
@@ -959,18 +948,15 @@ function drawLotteryJackpot() {
     });
     
     if (window.sound && typeof window.sound.playJackpot === "function") window.sound.playJackpot();
-    // 奖池重置
     lotteryPool = 5000;
   } else {
     addLog("❌ 本届无任何玩家和 AI 撞中大奖数字 [" + winNum + " 号]！当期奖金滚滚并入下期！累计大奖爆发在即！", "text-slate-400 font-bold");
     if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
   }
 
-  // 购买记录重置
   lotteryTickets = {};
 }
 
-// --- 命运与宿命卡大爆料 ---
 function triggerRandomEvent(player) {
   const events = [
     {
@@ -1020,7 +1006,6 @@ function triggerRandomEvent(player) {
   prepareEndTurn();
 }
 
-// 刷新右侧 [1列排布] 卡片
 function updatePlayerRanksUI() {
   const rankContainer = document.getElementById("player-ranks");
   if (!rankContainer) return;
@@ -1049,7 +1034,6 @@ function updatePlayerRanksUI() {
     const godTag = p.god ? ('<span class="text-[9px] text-indigo-300 font-bold">' + getGodName(p.god.type) + ":" + p.god.turnsLeft + "r</span>") : "";
     const bankruptTag = p.isBankrupt ? '<div class="absolute inset-0 bg-rose-950/80 flex items-center justify-center font-bold text-rose-500 text-xs rounded-xl pointer-events-none select-none">破产</div>' : "";
 
-    // 采用 1列横置扁平化卡片，节省高度，字数完全清晰，空间100%利用
     card.className = "p-2.5 rounded-xl transition-all relative flex flex-col justify-between h-[65px] " + turnBorder + " " + opacityClass;
     card.innerHTML = '<div class="flex items-center justify-between">' +
         '<div class="flex items-center gap-1.5">' +
@@ -1078,6 +1062,18 @@ function updatePlayerRanksUI() {
       bankruptTag;
     rankContainer.appendChild(card);
   });
+}
+
+function checkGameOver() {
+  const activePlayers = players.filter(p => !p.isBankrupt);
+  if (activePlayers.length === 1) {
+    const winner = activePlayers[0];
+    showEventModal("👑 帝国终极之主", `恭喜 [${winner.name}] 在这场跨越百个都市的环球大富翁大地图争霸战中，令所有财阀破产，问鼎世界首富！`, "🏆");
+    addLog(`🏆 争霸战宣告结束！环球首富头衔属于：[${winner.name}]！`, "text-yellow-400 font-bold");
+    
+    document.getElementById("btn-roll").disabled = true;
+    document.getElementById("btn-end-turn").disabled = true;
+  }
 }
 
 function getGodName(type) {
@@ -1120,7 +1116,6 @@ function closeEventModal() {
   if (modal) modal.classList.add("hidden");
 }
 
-// --- 自动加载器 ---
 function initGameSetup() {
   renderSetupScreen();
 }
