@@ -86,7 +86,7 @@
         <div>1. 基础过路费始终维持为当前地价的 <span class="text-white font-bold">10%</span>。每次升级费用等于当前过路费。升级无上限！</div>
         <div>2. <span class="text-rose-400 font-bold">恶意收购</span>：支付高达当前过路费 <span class="text-white font-bold">20倍</span> 的现金，可强行从对手手中夺走城市产权！</div>
         <div>3. <span class="text-red-400 font-bold">无情税金</span>：所有现金收入（起点红利、过路费、被收购赔款、利息等）均需缴纳 <span class="text-white font-bold">20%</span> 的高额所得税！</div>
-        <div>4. <span class="text-amber-400 font-bold">现金理财</span>：回合开始时，自动获取<span class="text-white font-bold">流转现金 0.5%</span>的无风险利息（需缴税）。</div>
+        <div>4. <span class="text-amber-400 font-bold">现金理财</span>：回合开始时，自动获取<span class="text-white font-bold">流转现金 0.1%</span>的无风险利息（需缴税）。</div>
         <div>5. <span class="text-purple-400 font-bold">命运转盘</span>：触发 <span class="text-white font-bold">5% 资产波动</span>（房产升值/贬值）或现金赏罚（奖励需缴税）。</div>
       </div>
 
@@ -554,7 +554,7 @@
       addLog(`⚖️ <span class="text-amber-400">税务局</span>：[${player.name}] 的${sourceDesc}收入 $${grossAmount.toLocaleString()}，缴纳 20% 所得税 <span class="text-rose-400">-$${tax.toLocaleString()}</span>，净入账 <span class="text-emerald-400">+$${net.toLocaleString()}</span>`, "text-slate-400");
     }
 
-    // --- 回合循环引擎 (0.5% 现金理财利息) ---
+    // --- 回合循环引擎 (0.1% 现金理财利息) ---
     function startPlayerTurn() {
       const p = players[currentTurnIndex];
       if (p.isBankrupt) { nextTurn(); return; }
@@ -570,8 +570,8 @@
       updatePlayerPositionsUI();
       updatePlayerRanksUI();
 
-      // 0.5% 现金生息结算 (计入 20% 所得税)
-      const interest = Math.floor(p.cash * 0.005);
+      // 0.1% 现金生息结算 (计入 20% 所得税)
+      const interest = Math.floor(p.cash * 0.001);
       if(interest > 0) {
         addLog(`🏦 现金理财：[${p.name}] 触发活期利息收益...`, "text-emerald-400 font-bold");
         addIncome(p, interest, "理财利息");
