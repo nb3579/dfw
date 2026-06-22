@@ -322,7 +322,7 @@ function startPlayerTurn() {
 
   document.getElementById("current-player-avatar").textContent = p.avatar;
   document.getElementById("current-player-name").textContent = p.name;
-  document.getElementById("round-counter").textContent = `ROUND ${roundCount}`;
+  document.getElementById("round-counter").textContent = `第 ${roundCount} 轮`;
 
   document.getElementById("btn-end-turn").disabled = true;
   document.getElementById("btn-roll").disabled = false;
@@ -332,7 +332,7 @@ function startPlayerTurn() {
 
   if (p.skipTurns > 0) {
     p.skipTurns--;
-    addLog(`🏥 [${p.name}] 正在修养或禁足，无法行动（剩余回合: ${p.skipTurns}）。`, "text-slate-500");
+    addLog(`🏥 [${p.name}] 正在休息或禁足，无法行动（剩余回合: ${p.skipTurns}）。`, "text-slate-500");
     document.getElementById("quick-tip").textContent = `${p.name} 禁足中，本回合自动跳过。`;
     
     document.getElementById("btn-end-turn").disabled = false;
@@ -870,7 +870,7 @@ function nextTurn() {
 }
 
 function fluctuateStockMarket() {
-  addLog(`🔔 回合交替 ROUND ${roundCount}：二级股市开盘刷新！`, "text-slate-500 font-bold");
+  addLog(`🔔 回合交替 第 ${roundCount} 轮：二级股市开盘刷新！`, "text-slate-500 font-bold");
   
   gameStocks.forEach(s => {
     const isUp = Math.random() > 0.48;
@@ -928,7 +928,7 @@ function simulateAISmartStockTrade(aiPlayer) {
         aiPlayer.stockHoldings[s.symbol] = held + buyCount;
         aiPlayer.stockCosts[s.symbol] = parseFloat(totalCostBasis.toFixed(2));
 
-        addLog(`💱 AI 量化交易：[${aiPlayer.name}] 低位扫货 [${s.name}] ${buyCount} 股，投资资本 -$${cost} (成本均价均记:$${aiPlayer.stockCosts[s.symbol].toFixed(1)})。`, "text-cyan-400");
+        addLog(`💱 AI 量化交易：[${aiPlayer.name}] 低位扫货 [${s.name}] ${buyCount} 股，投资资本 -$${cost} (成本均价:${aiPlayer.stockCosts[s.symbol].toFixed(1)})。`, "text-cyan-400");
         if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
       }
     }
@@ -992,19 +992,19 @@ function updatePlayerRanksUI() {
               ${p.name} 
               ${p.isAI ? `<span class="bg-slate-800 text-slate-400 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">AI</span>` : ""}
             </div>
-            <div class="text-[10px] text-slate-400 uppercase tracking-widest font-black">Net worth: <span class="text-cyan-400 font-extrabold text-xs">$${p.netWorth.toLocaleString()}</span></div>
+            <div class="text-[10px] text-slate-400 uppercase tracking-widest font-black">总资产: <span class="text-cyan-400 font-extrabold text-xs">$${p.netWorth.toLocaleString()}</span></div>
           </div>
         </div>
         <div class="text-right flex flex-col items-end">
-          <span class="text-xs font-black text-slate-500">#${idx + 1}</span>
-          ${p.god ? `<span class="bg-indigo-950/80 text-indigo-300 text-[9px] px-2 py-0.5 rounded-full border border-indigo-900/60 flex items-center gap-0.5 animate-pulse font-bold">${getGodName(p.god.type)}:${p.god.turnsLeft}r</span>` : ""}
+          <span class="text-xs font-black text-slate-500">第 ${idx + 1} 名</span>
+          ${p.god ? `<span class="bg-indigo-950/80 text-indigo-300 text-[9px] px-2 py-0.5 rounded-full border border-indigo-900/60 flex items-center gap-0.5 animate-pulse font-bold">${getGodName(p.god.type)}: 剩 ${p.god.turnsLeft} 轮</span>` : ""}
         </div>
       </div>
 
       <div class="grid grid-cols-3 gap-2 text-[10px] text-slate-500 border-t border-slate-800/60 pt-2.5 mt-2">
-        <div class="bg-slate-950/80 p-2 rounded-xl text-center">💵 Cash<br><span class="text-slate-200 font-black text-xs">$${p.cash.toLocaleString()}</span></div>
-        <div class="bg-slate-950/80 p-2 rounded-xl text-center">📈 Stocks<br><span class="text-slate-200 font-black text-xs">$${Math.floor(p.stockVal).toLocaleString()}</span></div>
-        <div class="bg-slate-950/80 p-2 rounded-xl text-center">🏘️ Estate<br><span class="text-slate-200 font-black text-xs">$${Math.floor(p.propertyVal).toLocaleString()}</span></div>
+        <div class="bg-slate-950/80 p-2 rounded-xl text-center">💵 现金资产<br><span class="text-slate-200 font-black text-xs">$${p.cash.toLocaleString()}</span></div>
+        <div class="bg-slate-950/80 p-2 rounded-xl text-center">📈 股票市值<br><span class="text-slate-200 font-black text-xs">$${Math.floor(p.stockVal).toLocaleString()}</span></div>
+        <div class="bg-slate-950/80 p-2 rounded-xl text-center">🏘️ 房产估值<br><span class="text-slate-200 font-black text-xs">$${Math.floor(p.propertyVal).toLocaleString()}</span></div>
       </div>
 
       ${p.isBankrupt ? `<div class="absolute inset-0 bg-rose-950/90 flex items-center justify-center font-black text-rose-500 text-sm rounded-2xl transform rotate-1 select-none pointer-events-none border border-rose-500 shadow-2xl">BANKRUPT • 破产出局</div>` : ""}
@@ -1039,7 +1039,7 @@ function renderStockMarketDetails() {
     btnContainer.innerHTML = "";
     gameStocks.forEach((s, idx) => {
       const btn = document.createElement("button");
-      const activeClass = (selectedStockIndex === idx) ? "bg-cyan-500 text-slate-950 border-cyan-400" : "bg-slate-800 text-slate-300 border-slate-700/60 hover:bg-slate-750";
+      const activeClass = (selectedStockIndex === idx) ? "bg-cyan-500 text-slate-900 border-cyan-400" : "bg-slate-800 text-slate-300 border-slate-700/60 hover:bg-slate-750";
       btn.className = `border py-2 rounded-xl text-xs font-bold transition-all uppercase tracking-widest ${activeClass}`;
       btn.textContent = s.symbol;
       btn.onclick = () => {
@@ -1066,9 +1066,9 @@ function renderStockMarketDetails() {
     const profitSign = totalProfit >= 0 ? '+' : '';
     holdDetailHTML = `
       <div class="flex flex-col gap-1 text-[11px] font-mono leading-relaxed">
-        <div class="flex justify-between"><span>已持股份:</span> <span class="font-bold text-white">${holdCount} 股</span></div>
-        <div class="flex justify-between"><span>持仓均价:</span> <span class="font-bold text-cyan-400">$${costBasis.toFixed(2)}</span></div>
-        <div class="flex justify-between"><span>估算损益:</span> <span class="font-bold ${profitColor}">${profitSign}$${totalProfit.toFixed(2)}</span></div>
+        <div class="flex justify-between"><span>已持有股份:</span> <span class="font-bold text-white">${holdCount} 股</span></div>
+        <div class="flex justify-between"><span>持仓平均成本:</span> <span class="font-bold text-cyan-400">$${costBasis.toFixed(2)}</span></div>
+        <div class="flex justify-between"><span>浮动估算损益:</span> <span class="font-bold ${profitColor}">${profitSign}$${totalProfit.toFixed(2)}</span></div>
       </div>
     `;
   } else {
@@ -1101,10 +1101,10 @@ function renderStockMarketDetails() {
         row.innerHTML = `
           <div class="flex flex-col">
             <span class="font-bold text-white">${s.name} (${s.symbol})</span>
-            <span class="text-[10px] text-slate-500">Hold: ${count} 股</span>
+            <span class="text-[10px] text-slate-500">持股数: ${count} 股</span>
           </div>
           <div class="text-right flex flex-col">
-            <span class="text-cyan-400 font-bold">成本均价: $${costBasisPrice.toFixed(2)}</span>
+            <span class="text-cyan-400 font-bold">买入成本: $${costBasisPrice.toFixed(2)}</span>
             <span class="${profitColor} font-bold text-[10px]">${profitSign}$${Math.floor(profit)} (${((profit / (count * costBasisPrice)) * 100).toFixed(1)}%)</span>
           </div>
         `;
@@ -1152,7 +1152,7 @@ function tradeStock(type) {
       activePlayer.stockHoldings[stock.symbol] = held + amount;
       activePlayer.stockCosts[stock.symbol] = parseFloat(totalCostBasis.toFixed(2));
 
-      addLog(`💱 股市买入：[${activePlayer.name}] 扫货买入 [${stock.name}] ${amount} 股 (成交价:$${stock.price.toFixed(2)}，持仓均价:$${activePlayer.stockCosts[stock.symbol].toFixed(2)})。`, "text-emerald-400");
+      addLog(`💱 股市买入：[${activePlayer.name}] 扫货买入 [${stock.name}] ${amount} 股 (成交价:$${stock.price.toFixed(2)}，持仓成本:$${activePlayer.stockCosts[stock.symbol].toFixed(2)})。`, "text-emerald-400");
       if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
     } else {
       alert("可用现金准备金不足，交易指令失败！");
@@ -1188,7 +1188,7 @@ function addLog(text, customClass = "text-slate-300") {
   if (!logs) return;
   const item = document.createElement("div");
   item.className = `p-1.5 border-b border-slate-800/40 leading-relaxed font-mono ${customClass}`;
-  item.textContent = `[ROUND ${roundCount}] ${text}`;
+  item.textContent = `[第 ${roundCount} 轮] ${text}`;
   logs.appendChild(item);
   logs.scrollTop = logs.scrollHeight;
 }
