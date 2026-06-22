@@ -3,25 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>大富翁网页版</title>
+  <title>大富翁4：全球城市大地图与神仙争霸版</title>
   <!-- 矢量 SVG 图标：彻底根除浏览器 favicon.ico 404 报错 -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- 引入全球最稳定的 cdnjs 金融级 Chart.js 库 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body class="text-gray-150 flex flex-col min-h-screen overflow-x-hidden p-3 sm:p-5">
+<body class="text-gray-100 flex flex-col min-h-screen overflow-x-hidden p-2 sm:p-4">
 
   <!-- 游戏主容器 -->
-  <div id="app" class="flex-grow flex flex-col justify-between max-w-[1550px] w-full mx-auto gap-5">
+  <div id="app" class="flex-grow flex flex-col justify-between max-w-[1700px] w-full mx-auto gap-4">
     
     <!-- 1. 游戏初始化/角色选择界面 -->
-    <div id="setup-screen" class="max-w-4xl mx-auto my-auto bg-slate-900/90 rounded-[2.5rem] p-7 md:p-12 shadow-2xl border border-slate-800/80 w-full backdrop-blur-md">
+    <div id="setup-screen" class="max-w-4xl mx-auto my-auto bg-slate-900/95 rounded-[2.5rem] p-7 md:p-12 shadow-2xl border border-slate-800/80 w-full backdrop-blur-md">
       <div class="text-center mb-10">
-        <h1 class="text-5xl md:text-6xl text-cyan-400 font-extrabold tracking-widest mb-3 uppercase filter drop-shadow-[0_0_15px_rgba(6,182,212,0.3)]">RICH & GODS</h1>
-        <p class="text-slate-400 text-sm md:text-base tracking-widest">大富翁4：全球股市与神仙霸战网页版</p>
+        <h1 class="text-5xl md:text-6xl text-cyan-400 font-extrabold tracking-widest mb-3 uppercase filter drop-shadow-[0_0_15px_rgba(6,182,212,0.3)]">RICH & GODS IV</h1>
+        <p class="text-slate-400 text-sm md:text-base tracking-widest">大富翁4：环球城市大地图与神仙争霸版</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -39,25 +37,24 @@
         <div class="bg-slate-950/40 rounded-3xl p-6 border border-slate-800/80 flex flex-col justify-between">
           <div>
             <h2 class="text-xl text-yellow-300 font-bold mb-3 flex items-center gap-2">
-              <span>⚙️</span> 环境初始设定
+              <span>⚙️</span> 初始环境设定
             </h2>
             <div class="grid grid-cols-2 gap-4 mb-5">
               <div>
                 <label class="text-xs text-slate-400 block mb-1">初始现金储备 ($)</label>
-                <input type="number" id="init-cash" value="20000" class="w-full bg-slate-900 border border-slate-850 rounded-lg py-2.5 px-3 text-white font-bold focus:outline-none focus:border-cyan-400">
+                <input type="number" id="init-cash" value="30000" class="w-full bg-slate-900 border border-slate-800 rounded-lg py-2.5 px-3 text-white font-bold focus:outline-none focus:border-cyan-400">
               </div>
               <div>
                 <label class="text-xs text-slate-400 block mb-1">经过起点奖金 ($)</label>
-                <input type="number" id="start-bonus" value="3000" class="w-full bg-slate-900 border border-slate-850 rounded-lg py-2.5 px-3 text-white font-bold focus:outline-none focus:border-cyan-400">
+                <input type="number" id="start-bonus" value="5000" class="w-full bg-slate-900 border border-slate-800 rounded-lg py-2.5 px-3 text-white font-bold focus:outline-none focus:border-cyan-400">
               </div>
             </div>
 
-            <h3 class="text-sm font-bold text-slate-300 mb-2">💡 游戏商业规则机制：</h3>
+            <h3 class="text-sm font-bold text-slate-300 mb-2">💡 商业博弈新规则：</h3>
             <ul class="text-xs text-slate-400 space-y-2.5 list-disc pl-4">
-              <li><strong class="text-yellow-400">华尔街股市</strong>：完全实时变现结算。支持高低吸筹以及精细的持仓成本核算。</li>
-              <li><strong class="text-green-400">土地公</strong>：附体阶段直接强占无主空地，并在行经自家地时实行免费无限升级。</li>
-              <li><strong class="text-orange-400">财神</strong>：全图过路费缴付减半，己方地带收租倍率翻倍，每轮送红包。</li>
-              <li><strong class="text-purple-400">衰神</strong>：全图过路费双倍重罚，己方地带租金减半，每轮强制丢失现金。</li>
+              <li><strong class="text-cyan-400">100 格超级大地图</strong>：包含 85 个世界著名都市、医院、拘留所、以及可以明码标价买卖神明的古老神庙！</li>
+              <li><strong class="text-emerald-400">环球时时彩中心</strong>：玩家可花费 $500 购买 1-50 幸运数字，每 10 轮在中央荧幕开奖一次，无人中奖则奖池滚存累积！</li>
+              <li><strong class="text-yellow-400">神明附身购买制</strong>：行经神庙时，可用总资产的 10% 雇佣大财神、土地公、或拥有双重行动特权的<strong class="text-indigo-400">智慧神🧠</strong>！</li>
             </ul>
           </div>
 
@@ -71,105 +68,111 @@
     <!-- 2. 游戏主战场 -->
     <div id="game-screen" class="hidden flex flex-col gap-4 w-full">
       
-      <!-- ==================== 上半部分：大棋盘铺满区 ==================== -->
-      <div class="w-full flex flex-col gap-2.5">
-        <!-- 头部实时跑马灯 Ticker -->
-        <div class="bg-slate-900/90 rounded-2xl px-5 py-2.5 flex items-center justify-between border border-slate-800/80 shadow-2xl overflow-hidden text-sm backdrop-blur-md">
-          <div class="flex items-center gap-2.5 font-black text-cyan-400 flex-shrink-0 uppercase tracking-widest text-xs">
-            <span>📈</span> 环球股市行情滚动：
-          </div>
-          <div class="w-full overflow-hidden relative h-5">
-            <div id="stock-ticker" class="absolute whitespace-nowrap text-xs text-slate-300 flex gap-8 animate-marquee">
-              <!-- 动态股票滚动信息 -->
-            </div>
-          </div>
-        </div>
-
-        <!-- 8x6 棋盘布局核心 -->
-        <div id="board-container" class="relative bg-slate-950 p-4 rounded-[2rem] border-4 border-slate-800/80 shadow-[0_20px_50px_rgba(0,0,0,0.5)] grid grid-cols-8 grid-rows-6 gap-2 sm:gap-3 w-full h-[480px] sm:h-[580px] md:h-[680px] lg:h-[750px] xl:h-[780px]">
+      <!-- ==================== 顶部超宽滚动棋盘区域 ==================== -->
+      <div class="w-full overflow-x-auto overflow-y-hidden border-4 border-slate-800 bg-slate-950 p-3 rounded-[2.5rem] shadow-2xl relative select-none max-h-[72vh] no-scrollbar">
+        <!-- 26x26 的百格超级棋盘，具有横向高密度弹性布局 -->
+        <div id="board-container" class="grid grid-cols-26 grid-rows-26 gap-1 w-[1600px] h-[1600px] relative">
           
-          <!-- 棋盘中央：整合操作区与实时资产风云榜 (占 Col 2-7, Row 2-5) -->
-          <div class="col-start-2 col-end-8 row-start-2 row-end-6 bg-slate-900/95 rounded-2xl p-4 sm:p-5 flex flex-col justify-between border border-slate-800/80 shadow-2xl relative overflow-hidden backdrop-blur-md">
+          <!-- ==================== 棋盘中央核心指挥大厅 (占 Col 2-25, Row 2-25) ==================== -->
+          <div class="col-start-2 col-end-26 row-start-2 row-end-26 bg-slate-900/95 rounded-[2rem] p-6 flex flex-col justify-between border border-slate-800 shadow-[inset_0_0_50px_rgba(0,0,0,0.8)] relative overflow-hidden backdrop-blur-md">
             
-            <div id="center-control" class="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full w-full z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full w-full z-10">
               
-              <!-- 左侧一列：回合控制器 (占 5 列) -->
-              <div class="lg:col-span-5 flex flex-col justify-between h-full gap-2.5">
+              <!-- 左侧：3D骰子驱动与极速彩票中心 (占 6 列) -->
+              <div class="lg:col-span-6 flex flex-col justify-between h-full gap-4">
                 
-                <!-- 当前行动玩家 -->
+                <!-- 当前行动状态 -->
                 <div class="flex justify-between items-center bg-slate-950/80 px-4 py-3 rounded-2xl border border-slate-800/60 shadow-inner">
                   <div class="flex items-center gap-3">
-                    <span id="current-player-avatar" class="text-3xl filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]">👩‍💼</span>
+                    <span id="current-player-avatar" class="text-3xl filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]">👧</span>
                     <div>
-                      <div class="text-[9px] text-slate-500 uppercase tracking-widest font-black">当前行动玩家</div>
-                      <div id="current-player-name" class="font-black text-sm sm:text-base text-white">阿土伯</div>
+                      <div class="text-[9px] text-slate-500 uppercase tracking-widest font-black">当前行动者</div>
+                      <div id="current-player-name" class="font-black text-sm text-white">孙小美</div>
                     </div>
                   </div>
                   <div class="text-right">
-                    <div class="text-[9px] text-slate-500 uppercase tracking-widest font-black">游戏回合</div>
-                    <div id="round-counter" class="font-black text-base text-cyan-400">ROUND 1</div>
+                    <div class="text-[9px] text-slate-500 uppercase tracking-widest font-black">ROUND</div>
+                    <div id="round-counter" class="font-black text-base text-cyan-400">第 1 轮</div>
                   </div>
                 </div>
 
-                <!-- 💥 骰子与掷骰行动合并：3D极简交互大按钮 💥 -->
-                <button id="btn-roll" onclick="triggerDiceRoll()" class="relative group w-full bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700/60 hover:border-cyan-500/80 rounded-2xl p-4 flex items-center justify-center gap-4 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.3)] hover:shadow-cyan-500/5 active:scale-[0.98]">
-                  <div id="dice-element" class="w-12 h-12 bg-white text-slate-950 rounded-xl flex items-center justify-center font-black text-3xl shadow-[0_5px_15px_rgba(255,255,255,0.15)] border-b-4 border-slate-300 transition-transform">
+                <!-- 💥 3D 掷骰大按钮 (色子与动作合一) 💥 -->
+                <button id="btn-roll" onclick="triggerDiceRoll()" class="relative group w-full bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-700/60 hover:border-cyan-500/80 rounded-2xl p-4 flex items-center justify-center gap-4 transition-all duration-300 shadow-[0_5px_25px_rgba(0,0,0,0.4)] hover:shadow-cyan-500/10 active:scale-[0.98]">
+                  <div id="dice-element" class="w-14 h-14 bg-white text-slate-950 rounded-2xl flex items-center justify-center font-black text-3xl shadow-[0_6px_20px_rgba(255,255,255,0.2)] border-b-4 border-slate-300 transition-transform">
                     ⚀
                   </div>
-                  <div class="text-left select-none">
+                  <div class="text-left">
                     <span class="block text-[10px] text-slate-500 font-black uppercase tracking-widest group-hover:text-cyan-400 transition-colors">DICE DRIVER</span>
-                    <span class="block text-xs sm:text-sm font-extrabold text-white">点击启动 掷骰前进!</span>
+                    <span class="block text-sm font-extrabold text-white">掷骰子前进 行星运动</span>
                   </div>
                 </button>
 
-                <!-- 底部二级交易功能组 -->
-                <div class="flex gap-2.5 w-full">
-                  <button onclick="openStockMarket()" class="flex-1 bg-slate-850 hover:bg-slate-800 text-cyan-300 font-bold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 border border-slate-800 shadow-md">
-                    📈 股市交易
+                <!-- 🎟️ 彩票购买控制中心 🎟️ -->
+                <div class="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-4 shadow-inner flex flex-col justify-between gap-2.5">
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs font-black text-yellow-300 flex items-center gap-1.5">🎟️ 环球时时彩中心</span>
+                    <span id="lottery-countdown" class="text-[10px] bg-slate-900 text-slate-400 px-2 py-0.5 rounded font-black border border-slate-800">开奖倒计时: 10轮</span>
+                  </div>
+                  <div class="grid grid-cols-2 gap-3 text-xs font-mono">
+                    <div class="bg-slate-900/60 p-2 rounded-xl">
+                      <span class="text-slate-500 block text-[9px] uppercase font-bold">当期总累积奖池</span>
+                      <span id="lottery-pool" class="text-emerald-400 font-extrabold text-sm">$5,000</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-2 rounded-xl">
+                      <span class="text-slate-500 block text-[9px] uppercase font-bold">我的幸运投注数</span>
+                      <span id="lottery-my-num" class="text-white font-extrabold text-sm">未投注</span>
+                    </div>
+                  </div>
+                  <button id="btn-buy-lottery" onclick="buyLotteryTicket()" class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black py-2.5 rounded-xl transition-all shadow-md text-xs tracking-wider">
+                    🎟️ 花费 $500 购买本期彩票
                   </button>
-                  <button id="btn-end-turn" onclick="endTurn()" class="flex-1 bg-slate-850 hover:bg-slate-800 text-slate-300 font-bold py-2.5 rounded-xl text-xs transition-all disabled:opacity-35 border border-slate-800 shadow-md" disabled>
+                </div>
+
+                <!-- 底部辅助操作区 -->
+                <div class="flex gap-3">
+                  <button id="btn-end-turn" onclick="endTurn()" class="w-full bg-slate-850 hover:bg-slate-800 text-slate-200 font-extrabold py-3 rounded-xl text-xs transition-all disabled:opacity-35 border border-slate-800 shadow-md" disabled>
                     ⏭️ 结束回合
                   </button>
                 </div>
 
-                <!-- 操作快报 -->
-                <div class="bg-slate-950/70 border border-slate-800/60 p-3 rounded-2xl text-[11px] text-cyan-200/90 flex items-center gap-2.5 shadow-inner">
+                <!-- 提示播报 -->
+                <div class="bg-slate-950/60 border border-slate-850/60 p-3 rounded-xl text-[10px] text-cyan-200/90 flex items-center gap-2.5">
                   <span>📢</span>
-                  <span id="quick-tip" class="font-medium truncate">系统：点击“掷骰前进!”开始当前回合</span>
+                  <span id="quick-tip" class="font-bold truncate">系统：点击“掷骰前进”开始游戏</span>
                 </div>
               </div>
 
-              <!-- 右侧一列：整合入核心版面的 2x2 实时资产卡片 (占 7 列) -->
-              <div class="lg:col-span-7 flex flex-col justify-between h-full bg-slate-950/50 p-3.5 rounded-2xl border border-slate-850 shadow-inner overflow-hidden">
-                <div class="flex justify-between items-center mb-2 border-b border-slate-800/60 pb-1.5">
-                  <span class="text-xs font-black text-cyan-300 uppercase tracking-widest flex items-center gap-1.5">🏆 实时资产风云榜</span>
-                  <span class="text-[9px] text-slate-500 uppercase tracking-wider font-semibold">(总资产 = 现金 + 股票 + 地产)</span>
+              <!-- 右侧：整合入中央面板的 [1列] 排行卡片 (占 6 列) -->
+              <div class="lg:col-span-6 flex flex-col justify-between h-full bg-slate-950/50 p-4 rounded-2xl border border-slate-850 shadow-inner overflow-hidden">
+                <div class="flex justify-between items-center mb-3 border-b border-slate-850 pb-2">
+                  <span class="text-xs font-black text-cyan-300 uppercase tracking-widest flex items-center gap-1.5">🏆 实时财富实况风云榜</span>
+                  <span class="text-[9px] text-slate-500 uppercase font-semibold">(1列排布 • 资产全显)</span>
                 </div>
-                <!-- 2x2 极速信息卡片容器 -->
-                <div id="player-ranks" class="grid grid-cols-2 gap-2 h-full overflow-y-auto no-scrollbar">
-                  <!-- 玩家资产卡片由 game.js 动态渲染 -->
+                <!-- 1列纯平铺排行榜容器 -->
+                <div id="player-ranks" class="flex-grow space-y-2 overflow-y-auto no-scrollbar pr-1 max-h-[460px]">
+                  <!-- 卡片由 game.js 渲染 -->
                 </div>
               </div>
 
             </div>
 
-            <!-- 中央背景半透明大LOGO -->
+            <!-- 背景大 logo -->
             <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.01]">
-              <h1 class="text-[12rem] font-black tracking-widest uppercase">RICH</h1>
+              <h1 class="text-[20rem] font-black uppercase">IV</h1>
             </div>
           </div>
 
-          <!-- 24个格子将由 JavaScript 动态生成 -->
+          <!-- 100个格子自动挂载 -->
         </div>
       </div>
 
-      <!-- ==================== 下半部分：全图铺满游戏日志播报 ==================== -->
-      <div class="bg-slate-900/90 rounded-[2rem] p-6 border border-slate-800/80 flex flex-col shadow-2xl h-[240px] backdrop-blur-md">
+      <!-- ==================== 下半部分：全幅游戏实时日志 ==================== -->
+      <div class="bg-slate-900/90 rounded-[2rem] p-6 border border-slate-800/80 flex flex-col shadow-2xl h-[220px] backdrop-blur-md">
         <h2 class="text-sm text-cyan-300 font-black mb-3.5 flex items-center justify-between border-b border-slate-800/60 pb-3">
           <span class="flex items-center gap-2.5">📜 游戏实时日志播报</span>
           <button onclick="clearLogs()" class="text-[10px] text-slate-400 hover:text-white bg-slate-850 px-3 py-1 rounded-lg border border-slate-800 transition-all font-bold">清空日志</button>
         </h2>
-        <div id="game-logs" class="flex-grow overflow-y-auto space-y-2.5 text-xs no-scrollbar pr-1 max-h-[160px]">
+        <div id="game-logs" class="flex-grow overflow-y-auto space-y-2 text-xs no-scrollbar pr-1 max-h-[140px]">
           <!-- 动态播报内容 -->
         </div>
       </div>
@@ -178,27 +181,79 @@
 
   </div>
 
-  <!-- ======================== 各类功能性弹窗 Modal ======================== -->
+  <!-- ======================== 特殊功能 Modal：神明购买中心 ======================== -->
+  <div id="shrine-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-800/80 rounded-[2.5rem] p-6 max-w-md w-full shadow-2xl text-center transform scale-95 transition-transform">
+      <span class="text-5xl">⛩️</span>
+      <h3 class="text-2xl font-black mt-2 text-yellow-300">古老神明庙宇</h3>
+      <p class="text-xs text-slate-400 mt-2">
+        神仙显灵！你可以选择花费当前<strong class="text-yellow-400">总资产的 10%</strong> 邀请神明附身 5 回合。<br>
+        (注: 新请来的神明将直接覆盖并替换旧神明)
+      </p>
 
-  <!-- A. 买地/加盖房屋弹窗 -->
+      <div class="my-5 space-y-3">
+        <!-- 财神 -->
+        <button onclick="buyGod('wealth')" class="w-full bg-slate-950/50 hover:bg-slate-950 border border-slate-800 hover:border-yellow-400/80 p-3 rounded-2xl flex items-center justify-between text-left transition-all">
+          <div class="flex items-center gap-2.5">
+            <span class="text-3xl">😇</span>
+            <div>
+              <span class="block text-xs font-black text-white">大财神 (Wealth God)</span>
+              <span class="block text-[10px] text-slate-500">每回合开始时，降临随机巨额红包现钞。</span>
+            </div>
+          </div>
+          <span class="text-xs font-extrabold text-yellow-400" id="god-price-wealth">$3,000</span>
+        </button>
+
+        <!-- 土地公 -->
+        <button onclick="buyGod('earth')" class="w-full bg-slate-950/50 hover:bg-slate-950 border border-slate-800 hover:border-green-400/80 p-3 rounded-2xl flex items-center justify-between text-left transition-all">
+          <div class="flex items-center gap-2.5">
+            <span class="text-3xl">🧙</span>
+            <div>
+              <span class="block text-xs font-black text-white">土地公 (Earth God)</span>
+              <span class="block text-[10px] text-slate-500">免疫所有对手地过路费；行经自地免费扩建升级。</span>
+            </div>
+          </div>
+          <span class="text-xs font-extrabold text-green-400" id="god-price-earth">$3,000</span>
+        </button>
+
+        <!-- 智慧神 -->
+        <button onclick="buyGod('wisdom')" class="w-full bg-slate-950/50 hover:bg-slate-950 border border-slate-800 hover:border-cyan-400/80 p-3 rounded-2xl flex items-center justify-between text-left transition-all">
+          <div class="flex items-center gap-2.5">
+            <span class="text-3xl">🧠</span>
+            <div>
+              <span class="block text-xs font-black text-white">智慧神 (Wisdom God)</span>
+              <span class="block text-[10px] text-slate-500">智慧开窍！每回合可免费获得一次额外掷骰再行动机会。</span>
+            </div>
+          </div>
+          <span class="text-xs font-extrabold text-cyan-400" id="god-price-wisdom">$3,000</span>
+        </button>
+      </div>
+
+      <button onclick="closeShrineModal()" class="w-full bg-slate-850 hover:bg-slate-800 text-slate-400 font-extrabold py-3 rounded-xl transition-all text-xs">
+        战略性放弃，不购买 ❌
+      </button>
+    </div>
+  </div>
+
+  <!-- 其他经典功能弹窗：买地/加层 -->
   <div id="property-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4 backdrop-blur-sm">
     <div class="bg-slate-900 border border-slate-800/80 rounded-[2rem] p-6 max-w-sm w-full shadow-2xl text-center transform scale-95 transition-transform">
       <div id="prop-color-bar" class="h-3 w-full rounded-full mb-4"></div>
       <span class="text-4xl" id="prop-icon">🏡</span>
       <h3 class="text-2xl font-black mt-2 text-white" id="prop-title">上海</h3>
-      <p class="text-xs text-slate-400 mt-1.5" id="prop-desc">这是一块荒地，买下它来收租吧！</p>
+      <p class="text-xs text-slate-400 mt-1.5" id="prop-desc">这是一块无主城市，立刻派人占领，垄断财富！</p>
       
       <div class="bg-slate-950/60 rounded-2xl p-4.5 my-4 text-left space-y-2 text-xs">
         <div class="flex justify-between">
-          <span class="text-slate-400 font-semibold">投资现金支出：</span>
+          <span class="text-slate-400 font-semibold">投资契约金：</span>
           <span class="font-extrabold text-cyan-300" id="prop-cost">$1,000</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-slate-400 font-semibold">地产当前等级：</span>
+          <span class="text-slate-400 font-semibold">当前等级：</span>
           <span class="font-bold text-slate-200" id="prop-level">空地 (Lv.0)</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-slate-400 font-semibold">基础租金过路费：</span>
+          <span class="text-slate-400 font-semibold">预计基础租金：</span>
           <span class="font-extrabold text-rose-400" id="prop-rent">$200</span>
         </div>
       </div>
@@ -208,100 +263,18 @@
           暂不考虑
         </button>
         <button id="prop-confirm-btn" onclick="confirmPropertyAction(true)" class="flex-1 bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black py-3 rounded-xl transition-all text-xs shadow-lg">
-          确认买入
+          确认签订
         </button>
       </div>
     </div>
   </div>
 
-  <!-- B. 股市交易所弹窗 -->
-  <div id="stock-modal" class="hidden fixed inset-0 z-50 bg-slate-950/90 flex items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-slate-900 border border-slate-800/80 rounded-[2.5rem] p-6 max-w-4xl w-full h-[90vh] md:h-auto md:max-h-[85vh] shadow-2xl flex flex-col">
-      <!-- 头部 -->
-      <div class="flex justify-between items-center border-b border-slate-800 pb-4 mb-5">
-        <div>
-          <h3 class="text-lg font-black text-cyan-300 flex items-center gap-2">
-            <span>📈</span> 华尔街证券交易终端 (实时损益与成本核算)
-          </h3>
-          <p class="text-[11px] text-slate-500 uppercase tracking-widest font-semibold mt-1">自动跟踪并更新历史买入均价，精确核算持仓浮动盈亏</p>
-        </div>
-        <button onclick="closeStockMarket()" class="text-slate-400 hover:text-white text-2xl font-black bg-slate-850 w-9 h-8 rounded-full flex items-center justify-center transition-all">&times;</button>
-      </div>
-
-      <!-- 中间 -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 overflow-y-auto no-scrollbar flex-grow">
-        <!-- 左边 -->
-        <div class="lg:col-span-2 flex flex-col gap-4">
-          <div class="grid grid-cols-5 gap-2" id="stock-select-buttons">
-            <!-- 动态生成股票切换按钮 -->
-          </div>
-          <div class="bg-slate-950 rounded-2xl p-4 border border-slate-850 relative h-64 shadow-inner">
-            <div class="absolute top-2 left-4 text-[10px] font-black text-slate-500 uppercase tracking-widest" id="chart-title">AAPL 历史波动折线</div>
-            <canvas id="stockCanvas" class="w-full h-full"></canvas>
-          </div>
-        </div>
-
-        <!-- 右边 -->
-        <div class="bg-slate-950/40 rounded-3xl p-5 border border-slate-800/80 flex flex-col justify-between">
-          <div>
-            <div class="flex justify-between items-center mb-4">
-              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">当前选中标的：</span>
-              <span id="stock-detail-name" class="text-cyan-300 font-extrabold">英伟达 (NVDA)</span>
-            </div>
-            
-            <div class="space-y-3 mb-5 bg-slate-900/60 p-4 rounded-2xl text-xs font-mono border border-slate-850">
-              <div class="flex justify-between">
-                <span class="text-slate-500">当前市价：</span>
-                <span class="font-extrabold text-emerald-400" id="stock-detail-price">$120.50</span>
-              </div>
-              <div class="flex flex-col gap-1.5 border-t border-slate-800/60 pt-3">
-                <span class="text-[10px] text-slate-500 uppercase font-black tracking-widest">您的持有详情：</span>
-                <div class="font-bold text-white text-xs leading-relaxed" id="stock-detail-hold">0 股 (均价成本: $0.00)</div>
-              </div>
-              <div class="flex justify-between border-t border-slate-800/60 pt-3">
-                <span class="text-slate-500">账户可用现金：</span>
-                <span class="font-extrabold text-cyan-300" id="stock-user-cash">$15,000</span>
-              </div>
-            </div>
-
-            <div class="space-y-3">
-              <div>
-                <label class="text-[10px] text-slate-500 block mb-1.5 font-bold uppercase tracking-wider">买卖数量</label>
-                <div class="flex gap-2.5">
-                  <input type="number" id="stock-trade-amount" value="10" min="1" class="bg-slate-900 border border-slate-850 rounded-xl p-2.5 text-white font-extrabold w-full focus:outline-none focus:border-cyan-400 text-xs">
-                  <button onclick="setTradeMax()" class="bg-slate-850 hover:bg-slate-800 px-3.5 rounded-xl text-xs font-bold text-slate-300 border border-slate-800 transition-all">全仓</button>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-2 gap-3 pt-2">
-                <button onclick="tradeStock('buy')" class="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black py-3 rounded-xl transition-all shadow-lg text-xs">
-                  📥 购入 (Buy)
-                </button>
-                <button onclick="tradeStock('sell')" class="bg-rose-600 hover:bg-rose-500 text-slate-950 font-black py-3 rounded-xl transition-all shadow-lg text-xs">
-                  📤 抛售 (Sell)
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-5 border-t border-slate-800/80 pt-4">
-            <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">📊 账户综合证券持仓清单</h4>
-            <div id="stock-holding-list" class="space-y-2 text-xs max-h-[140px] overflow-y-auto no-scrollbar">
-              <!-- 列表 -->
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- C. 命运/机会/神明触发事件通用弹窗 -->
   <div id="event-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4 backdrop-blur-sm">
     <div class="bg-slate-900 border border-slate-800/80 rounded-[2rem] p-6 max-w-sm w-full shadow-2xl text-center transform scale-95 transition-all">
       <div class="text-5xl mb-3" id="event-modal-icon">🎰</div>
-      <h3 class="text-xl font-black text-cyan-300" id="event-modal-title">命运大转盘</h3>
+      <h3 class="text-xl font-black text-cyan-300" id="event-modal-title">命运之神</h3>
       <div class="my-4 bg-slate-950/60 p-4.5 rounded-2xl text-xs leading-relaxed text-slate-300 text-left border border-slate-850" id="event-modal-text">
-        你踩到了神秘的命运宝箱，获得了 财神爷 的保佑 5 回合！
+        你遭遇了宏观黑天鹅！
       </div>
       <button onclick="closeEventModal()" class="w-full bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black py-3 rounded-xl transition-all text-xs shadow-lg">
         收下福报
@@ -309,9 +282,8 @@
     </div>
   </div>
 
-  <!-- 游戏脚本驱动 -->
+  <!-- 游戏脚本 -->
   <script src="js/audio.js"></script>
-  <script src="js/stock.js"></script>
   <script src="js/game.js"></script>
 </body>
 </html>
