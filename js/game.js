@@ -1,68 +1,121 @@
 /* =======================================================
-   大富翁4：全球股市与神明争霸战 游戏主引擎及商业机制模块
+   大富翁4：全球城市大地图与神明争霸 游戏主引擎模块
    ======================================================= */
 
-// --- 游戏状态核心数据库 ---
+// --- 游戏动态运行时状态 ---
 let players = [];
-let gameStocks = [];
 let currentTurnIndex = 0;
 let roundCount = 1;
 let mapStates = [];
-let selectedStockIndex = 0;
 let isDiceRolling = false;
 let currentPropPending = null;
 let passStartBonus = 3000;
 
-const MAP_LENGTH = 24;
+// --- 🎟️ 彩票系统数据库 ---
+let lotteryPool = 5000; // 初始累积奖金
+let lotteryTickets = {}; // 记录玩家本10轮购买的数字, 格式 { playerId: number }
+
+const MAP_LENGTH = 100;
 const GOD_TURNS = 5;
 
-// --- 24 地格精密配置 ---
-const TILE_DEFS = [
-  { id: 0, col: 0, row: 0, name: "起点 🏁", type: "START", color: "bg-red-500", desc: "每次经过获取起点奖励" },
-  { id: 1, col: 1, row: 0, name: "台北 🗼", type: "LAND", cost: 1000, rent: 150, color: "from-pink-500 to-pink-600 font-bold", desc: "亚洲科技枢纽地标" },
-  { id: 2, col: 2, row: 0, name: "命运宝箱 🎰", type: "CHANCE", color: "bg-purple-600", desc: "未知的宿命或神仙庇佑" },
-  { id: 3, col: 3, row: 0, name: "硅谷 💻", type: "LAND", cost: 1400, rent: 220, color: "from-pink-500 to-pink-600 font-bold", desc: "高科技创业核心圣地" },
-  { id: 4, col: 4, row: 0, name: "证券所 📈", type: "STOCK_EXCHANGE", color: "bg-emerald-600", desc: "股市狂欢交易所" },
-  { id: 5, col: 5, row: 0, name: "东京 🌸", type: "LAND", cost: 1200, rent: 180, color: "from-yellow-500 to-amber-500 font-bold", desc: "东方时尚与商业中心" },
-  { id: 6, col: 6, row: 0, name: "神明庙 ⛩️", type: "GOD_SHRINE", color: "bg-amber-600", desc: "求神问卜，降临各种神力" },
-  { id: 7, col: 7, row: 0, name: "首尔 🇰🇷", type: "LAND", cost: 1100, rent: 160, color: "from-yellow-500 to-amber-500 font-bold", desc: "韩流潮流前沿之地" },
-  
-  { id: 8, col: 7, row: 1, name: "医院 🏥", type: "HOSPITAL", color: "bg-blue-600", desc: "需要静养，不能动弹" },
-  { id: 9, col: 7, row: 2, name: "伦敦 🎡", type: "LAND", cost: 1600, rent: 280, color: "from-blue-500 to-cyan-500 font-bold", desc: "古老雾都与金融中心" },
-  { id: 10, col: 7, row: 3, name: "巴黎 🗼", type: "LAND", cost: 1800, rent: 320, color: "from-blue-500 to-cyan-500 font-bold", desc: "浪漫艺术之都" },
-  { id: 11, col: 7, row: 4, name: "机会命运 🎁", type: "CHANCE", color: "bg-purple-600", desc: "未知的财富机会" },
-  
-  { id: 12, col: 7, row: 5, name: "命运之轮 🎡", type: "DESTINY", color: "bg-indigo-600", desc: "命运由天定" },
-  { id: 13, col: 6, row: 5, name: "纽约 🗽", type: "LAND", cost: 2500, rent: 450, color: "from-red-500 to-rose-500 font-bold", desc: "世界的金融十字路口" },
-  { id: 14, col: 5, row: 5, name: "证券所 📈", type: "STOCK_EXCHANGE", color: "bg-emerald-600", desc: "股市狂欢交易所" },
-  { id: 15, col: 4, row: 5, name: "上海 🏙️", type: "LAND", cost: 2000, rent: 350, color: "from-green-500 to-emerald-500 font-bold", desc: "东方明珠魔都极速发展" },
-  { id: 16, col: 3, row: 5, name: "神明庙 ⛩️", type: "GOD_SHRINE", color: "bg-amber-600", desc: "各路路神明赐福" },
-  { id: 17, col: 2, row: 5, name: "深圳 🇨🇳", type: "LAND", cost: 1500, rent: 250, color: "from-green-500 to-emerald-500 font-bold", desc: "硬件科技硅谷突飞猛进" },
-  
-  { id: 18, col: 1, row: 5, name: "拘留所 🚓", type: "PRISON", color: "bg-gray-600", desc: "面壁思过，停止掷骰" },
-  { id: 19, col: 0, row: 5, name: "悉尼 🦘", type: "LAND", cost: 1300, rent: 200, color: "from-purple-500 to-violet-500 font-bold", desc: "南半球明珠" },
-  { id: 20, col: 0, row: 4, name: "机会命运 🍀", type: "CHANCE", color: "bg-purple-600", desc: "好运降临或是意外开销" },
-  { id: 21, col: 0, row: 3, name: "新加坡 🦁", type: "LAND", cost: 1700, rent: 300, color: "from-purple-500 to-violet-500 font-bold", desc: "花园城市金融交融点" },
-  { id: 22, col: 0, row: 2, name: "命运之星 ⭐", type: "DESTINY", color: "bg-indigo-600", desc: "命运不可改变" },
-  { id: 23, col: 0, row: 1, name: "迪拜 🕌", type: "LAND", cost: 3000, rent: 600, color: "from-red-500 to-rose-500 font-bold", desc: "满地黄金的沙漠绿洲" }
+// --- 85个全球世界城市名录库 (用于填充100个格子的LAND类型) ---
+const GLOBAL_CITIES = [
+  "北京", "东京", "纽约", "伦敦", "巴黎", "罗马", "悉尼", "柏林", "多伦多", "新加坡", 
+  "迪拜", "莫斯科", "首尔", "上海", "深圳", "香港", "曼谷", "孟买", "伊斯坦布尔", "里约", 
+  "开普敦", "阿姆斯特丹", "日内瓦", "维也纳", "马德里", "里斯本", "斯德哥尔摩", "奥斯陆", "哥本哈根", "布鲁塞尔", 
+  "雅典", "布拉格", "华沙", "布达佩斯", "基辅", "都柏林", "赫尔辛基", "雷克雅未克", "马尼拉", "雅加达", 
+  "吉隆坡", "河内", "温哥华", "洛杉矶", "芝加哥", "旧金山", "波士顿", "西雅图", "迈阿密", "休斯敦", 
+  "休斯敦", "拉斯维加斯", "火奴鲁鲁", "安克雷奇", "墨西哥城", "哈瓦那", "波哥大", "利马", "圣地亚哥", "布宜诺斯艾利斯", 
+  "卡萨布兰卡", "内罗毕", "拉各斯", "约翰内斯堡", "奥克兰", "惠灵顿", "基督城", "大阪", "京都", "名古屋", 
+  "福冈", "札幌", "台北", "高雄", "新竹", "台中", "台南", "苏黎世", "法兰克福", "慕尼黑", 
+  "汉堡", "新德里", "米兰", "威尼斯", "巴塞罗那"
 ];
 
-const PLAYER_TEMPLATES = [
-  { name: "孙小美 👧", color: "border-pink-500 text-pink-500 shadow-pink-500/20 bg-pink-500", textCol: "text-pink-400", avatar: "👧" },
-  { name: "钱夫人 👩‍💼", color: "border-red-500 text-red-500 shadow-red-500/20 bg-red-500", textCol: "text-red-400", avatar: "👩‍💼" },
-  { name: "阿土伯 👴", color: "border-green-500 text-green-500 shadow-green-500/20 bg-green-500", textCol: "text-green-400", avatar: "👴" },
-  { name: "金贝贝 👶", color: "border-purple-500 text-purple-500 shadow-purple-500/20 bg-purple-500", textCol: "text-purple-400", avatar: "👶" }
-];
+// --- 100个棋盘格子动态构建生成器 ---
+const TILE_DEFS = [];
+function generate100Tiles() {
+  let cityIndex = 0;
+  
+  // 建立 26x26 闭环周长的 100 个格子
+  for (let i = 0; i < 100; i++) {
+    let col = 0;
+    let row = 0;
+    
+    // 棋盘周长坐标算式 (0 to 99)
+    if (i <= 25) {
+      // 顶边 Row 0, Col 0 to 25
+      col = i;
+      row = 0;
+    } else if (i > 25 && i <= 49) {
+      // 右边 Col 25, Row 1 to 24
+      col = 25;
+      row = i - 25;
+    } else if (i > 49 && i <= 75) {
+      // 底边 Row 25, Col 25 down to 0
+      col = 25 - (i - 50);
+      row = 25;
+    } else {
+      // 左边 Col 0, Row 24 down to 1
+      col = 0;
+      row = 25 - (i - 75);
+    }
 
-const STOCKS_DEFS = [
-  { symbol: "NVDA", name: "英伟达", price: 120.0, base: 120.0, vol: 0.15, trend: [], color: "#fbbf24" },
-  { symbol: "AAPL", name: "苹果", price: 180.0, base: 180.0, vol: 0.05, trend: [], color: "#38bdf8" },
-  { symbol: "TSMC", name: "台积电", price: 150.0, base: 150.0, vol: 0.08, trend: [], color: "#34d399" },
-  { symbol: "TSLA", name: "特斯拉", price: 200.0, base: 200.0, vol: 0.20, trend: [], color: "#f87171" },
-  { symbol: "MSFT", name: "微软", price: 400.0, base: 400.0, vol: 0.04, trend: [], color: "#a78bfa" }
-];
+    // 格子地带分类
+    let type = "LAND";
+    let name = "";
+    let color = "from-cyan-500 to-blue-600 font-black";
+    let desc = "世界商业城市";
+    let cost = 1000 + (i * 20); // 阶梯地价
+    let rent = 150 + (i * 5);   // 阶梯过路费
 
-// --- 初始引导界面生成 ---
+    if (i === 0) {
+      type = "START";
+      name = "起点 🏁";
+      color = "bg-red-500";
+      desc = "经过此处获得奖励资金";
+    } else if (i === 25) {
+      type = "HOSPITAL";
+      name = "医院 🏥";
+      color = "bg-blue-600";
+      desc = "静养 2 回合，不能掷骰";
+    } else if (i === 50) {
+      type = "PRISON";
+      name = "拘留所 🚓";
+      color = "bg-gray-600";
+      desc = "面壁 2 回合，不能行动";
+    } else if (i === 12 || i === 37 || i === 62 || i === 87) {
+      type = "GOD_SHRINE";
+      name = "神明庙 ⛩️";
+      color = "bg-amber-600";
+      desc = "花费 10% 资产购买随机神力";
+    } else if (i === 6 || i === 18 || i === 31 || i === 44 || i === 56 || i === 68 || i === 81 || i === 93) {
+      // 机会与命运格
+      type = Math.random() > 0.5 ? "CHANCE" : "DESTINY";
+      name = type === "CHANCE" ? "财富机会 🎁" : "宿命大转 🎡";
+      color = "bg-purple-600";
+      desc = "未知的宿命或意外收支";
+    } else {
+      // 城市地产
+      name = GLOBAL_CITIES[cityIndex] || "新都市";
+      cityIndex++;
+      // 根据城市给与色彩组
+      const colors = [
+        "from-pink-500 to-pink-600 font-bold",
+        "from-yellow-500 to-amber-500 font-bold",
+        "from-blue-500 to-cyan-500 font-bold",
+        "from-red-500 to-rose-500 font-bold",
+        "from-green-500 to-emerald-500 font-bold",
+        "from-purple-500 to-violet-500 font-bold"
+      ];
+      color = colors[i % colors.length];
+    }
+
+    TILE_DEFS.push({ id: i, col, row, name, type, cost, rent, color, desc });
+  }
+}
+generate100Tiles();
+
+// --- 初始成员设置逻辑 (安全隔离 Cloudflare 转义问题) ---
 function renderSetupScreen() {
   const listContainer = document.getElementById("player-setup-list");
   if (!listContainer) return;
@@ -71,31 +124,64 @@ function renderSetupScreen() {
   PLAYER_TEMPLATES.forEach((tpl, index) => {
     const row = document.createElement("div");
     row.className = "flex items-center justify-between bg-slate-950/80 p-3 rounded-2xl border border-slate-800 shadow-inner";
-    row.innerHTML = `
-      <div class="flex items-center gap-3">
-        <span class="text-3xl filter drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]">${tpl.avatar}</span>
-        <div>
-          <input type="text" id="setup-name-${index}" value="${tpl.name}" class="bg-slate-900 border border-slate-800 text-white font-bold rounded-lg px-2 py-1 text-xs w-32 focus:outline-none focus:border-cyan-400">
-          <span class="text-[10px] block text-slate-500 mt-1 uppercase tracking-wider">COLOR: ${tpl.name.split(' ')[0]}</span>
-        </div>
-      </div>
-      <div class="flex gap-2">
-        <label class="flex items-center gap-1 cursor-pointer">
-          <input type="radio" name="setup-type-${index}" value="human" ${index === 0 ? "checked" : ""} class="accent-cyan-400">
-          <span class="text-[11px] font-bold text-slate-300">玩家</span>
-        </label>
-        <label class="flex items-center gap-1 cursor-pointer">
-          <input type="radio" name="setup-type-${index}" value="ai" ${index > 0 ? "checked" : ""} class="accent-cyan-400">
-          <span class="text-[11px] font-bold text-slate-400">AI</span>
-        </label>
-        <label class="flex items-center gap-1 cursor-pointer">
-          <input type="radio" name="setup-type-${index}" value="none" class="accent-cyan-400">
-          <span class="text-[11px] font-bold text-slate-500">不参战</span>
-        </label>
-      </div>
-    `;
+    row.innerHTML = '<div class="flex items-center gap-3">' +
+      '<span class="text-3xl filter drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]">' + tpl.avatar + '</span>' +
+      '<div>' +
+        '<input type="text" id="setup-name-' + index + '" value="' + tpl.name + '" class="bg-slate-900 border border-slate-800 text-white font-bold rounded-lg px-2 py-1 text-xs w-32 focus:outline-none focus:border-cyan-400">' +
+        '<span class="text-[10px] block text-slate-500 mt-1 uppercase tracking-wider">COLOR: ' + tpl.name.split(' ')[0] + '</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="flex gap-2">' +
+      '<label class="flex items-center gap-1 cursor-pointer">' +
+        '<input type="radio" name="setup-type-' + index + '" value="human" ' + (index === 0 ? "checked" : "") + ' class="accent-cyan-400">' +
+        '<span class="text-[11px] font-bold text-slate-300">玩家</span>' +
+      '</label>' +
+      '<label class="flex items-center gap-1 cursor-pointer">' +
+        '<input type="radio" name="setup-type-' + index + '" value="ai" ' + (index > 0 ? "checked" : "") + ' class="accent-cyan-400">' +
+        '<span class="text-[11px] font-bold text-slate-400">AI</span>' +
+      '</label>' +
+      '<label class="flex items-center gap-1 cursor-pointer">' +
+        '<input type="radio" name="setup-type-' + index + '" value="none" class="accent-cyan-400">' +
+        '<span class="text-[11px] font-bold text-slate-500">不参战</span>' +
+      '</label>' +
+    '</div>';
     listContainer.appendChild(row);
   });
+}
+
+// --- 💰 核心金币盈亏弹气泡引擎 ---
+function showFloatingMoney(playerId, amount) {
+  if (amount === 0) return;
+
+  const badge = document.getElementById("player-badge-" + playerId);
+  if (badge) {
+    const rect = badge.getBoundingClientRect();
+    createFloatingNode(rect.left + window.scrollX + rect.width / 2, rect.top + window.scrollY, amount);
+  }
+
+  const rankAvatar = document.getElementById("rank-avatar-" + playerId);
+  if (rankAvatar) {
+    const rect = rankAvatar.getBoundingClientRect();
+    createFloatingNode(rect.left + window.scrollX + rect.width / 2, rect.top + window.scrollY, amount);
+  }
+}
+
+function createFloatingNode(x, y, amount) {
+  const floatDiv = document.createElement("div");
+  floatDiv.className = "floating-money-node " + (amount >= 0 ? "text-emerald-400" : "text-rose-500");
+  floatDiv.textContent = (amount >= 0 ? "+" : "") + "$" + Math.abs(amount).toLocaleString();
+  floatDiv.style.left = x + "px";
+  floatDiv.style.top = y + "px";
+  document.body.appendChild(floatDiv);
+  
+  setTimeout(() => { floatDiv.remove(); }, 1400);
+}
+
+function adjustPlayerCash(player, amount) {
+  player.cash += amount;
+  if (player.cash < 0) player.cash = 0;
+  showFloatingMoney(player.id, amount);
+  updatePlayerRanksUI();
 }
 
 // --- 游戏启动主引擎 ---
@@ -106,15 +192,14 @@ function startGame() {
   
   const initCashEl = document.getElementById("init-cash");
   const startBonusEl = document.getElementById("start-bonus");
-  const initCash = initCashEl ? (parseInt(initCashEl.value) || 20000) : 20000;
-  passStartBonus = startBonusEl ? (parseInt(startBonusEl.value) || 3000) : 3000;
+  const initCash = initCashEl ? (parseInt(initCashEl.value) || 30000) : 30000;
+  passStartBonus = startBonusEl ? (parseInt(startBonusEl.value) || 5000) : 5000;
 
   players = [];
   PLAYER_TEMPLATES.forEach((tpl, index) => {
-    const nameInput = document.getElementById(`setup-name-${index}`);
-    const typeInput = document.querySelector(`input[name="setup-type-${index}"]:checked`);
+    const nameInput = document.getElementById("setup-name-" + index);
+    const typeInput = document.querySelector('input[name="setup-type-' + index + '"]:checked');
     
-    // 防御性保护：如果元素还未加载成功，则安全跳过，防止控制台崩溃
     if (!nameInput || !typeInput) return;
 
     const nameVal = nameInput.value;
@@ -128,62 +213,51 @@ function startGame() {
         color: tpl.color,
         textCol: tpl.textCol,
         cash: initCash,
-        // 精细化证券持仓结构：NVDA, AAPL等
-        stockHoldings: { "NVDA": 0, "AAPL": 0, "TSMC": 0, "TSLA": 0, "MSFT": 0 },
-        stockCosts: { "NVDA": 0.0, "AAPL": 0.0, "TSMC": 0.0, "TSLA": 0.0, "MSFT": 0.0 }, // 平均买入价格
         position: 0,
-        god: null,
+        god: null, // null | { type: 'wealth'|'earth'|'wisdom', turnsLeft: 5 }
         isBankrupt: false,
         isAI: typeVal === "ai",
-        skipTurns: 0
+        skipTurns: 0,
+        hasExtraRoll: false // 智慧神专享
       });
     }
   });
 
   if (players.length < 2) {
-    alert("必须保留最少2名角色，且设置已正确渲染，才能正常进行对决！");
+    alert("必须保留最少2名角色才能开始终极对决！");
     return;
   }
 
-  // 地图权属与级别初始化
   mapStates = TILE_DEFS.map(tile => {
     return { id: tile.id, owner: null, level: 0 };
   });
 
-  // 证券走势图初始化前10周期
-  gameStocks = JSON.parse(JSON.stringify(STOCKS_DEFS));
-  gameStocks.forEach(s => {
-    s.trend = Array.from({ length: 10 }, () => {
-      const change = 1 + (Math.random() * 2 - 1) * s.vol;
-      return parseFloat((s.base * change).toFixed(2));
-    });
-    s.price = s.trend[s.trend.length - 1];
-  });
+  // 初始化彩票库
+  lotteryPool = 5000;
+  lotteryTickets = {};
 
   document.getElementById("setup-screen").classList.add("hidden");
   document.getElementById("game-screen").classList.remove("hidden");
 
   renderBoard();
   updatePlayerRanksUI();
-  updateStockTickerUI();
 
   currentTurnIndex = 0;
   roundCount = 1;
-  addLog("🎬 地图初始化圆满完成，全球商业战役正式开始！", "text-cyan-400 font-bold");
+  addLog("🎬 100格城市世界大地图绘制完成！全球对战开打！", "text-cyan-400 font-bold");
   
   startPlayerTurn();
 }
 
-// --- 棋盘沙盒格子完全绘制 ---
 function renderBoard() {
   const container = document.getElementById("board-container");
   if (!container) return;
-  const existingTiles = container.querySelectorAll('.board-tile');
+  const existingTiles = container.querySelectorAll(".board-tile");
   existingTiles.forEach(el => el.remove());
 
   TILE_DEFS.forEach(tile => {
     const tileDiv = document.createElement("div");
-    tileDiv.id = `tile-${tile.id}`;
+    tileDiv.id = "tile-" + tile.id;
     tileDiv.style.gridColumn = tile.col + 1;
     tileDiv.style.gridRow = tile.row + 1;
 
@@ -192,32 +266,28 @@ function renderBoard() {
     const state = mapStates[tile.id];
 
     if (tile.type === "LAND") {
-      headerColor = `bg-gradient-to-r ${tile.color}`;
-      subText = `$${tile.cost} (租金:$${tile.rent})`;
+      headerColor = "bg-gradient-to-r " + tile.color;
+      subText = "$" + tile.cost + " (租金:$" + tile.rent + ")";
     } else if (tile.type === "START") {
       headerColor = "bg-red-500";
-    } else if (tile.type === "STOCK_EXCHANGE") {
-      headerColor = "bg-emerald-600";
     } else if (tile.type === "GOD_SHRINE") {
       headerColor = "bg-amber-600";
     }
 
-    tileDiv.className = `board-tile bg-slate-900 border border-slate-800/80 rounded-2xl p-2.5 flex flex-col justify-between overflow-hidden shadow relative select-none`;
-    tileDiv.innerHTML = `
-      <div class="${headerColor} text-[10px] md:text-[11px] px-1.5 py-0.5 rounded-lg text-center font-bold text-slate-950 shadow-md">
-        ${tile.name}
-      </div>
-      <div class="flex-grow flex flex-col items-center justify-center my-1 relative">
-        <span id="tile-house-visual-${tile.id}" class="text-2xl md:text-3xl filter drop-shadow-[0_4px_8px_rgba(255,255,255,0.05)]">
-          ${getPropertyEmoji(tile.type, state?.level)}
-        </span>
-        <div id="tile-owner-indicator-${tile.id}" class="absolute bottom-0 text-[10px] font-black px-1.5 py-0.5 rounded shadow-lg"></div>
-      </div>
-      <div class="text-[9px] sm:text-[10px] text-slate-500 text-center font-bold tracking-tight" id="tile-footer-${tile.id}">
-        ${subText}
-      </div>
-      <div id="tile-players-holder-${tile.id}" class="absolute inset-x-0 bottom-1 flex justify-center gap-1 flex-wrap z-10 pointer-events-none px-1"></div>
-    `;
+    tileDiv.className = "board-tile bg-slate-900 border border-slate-800/80 rounded-xl p-2 flex flex-col justify-between overflow-hidden shadow relative select-none";
+    tileDiv.innerHTML = '<div class="' + headerColor + ' text-[10px] md:text-[11px] px-1 py-0.5 rounded-lg text-center font-bold text-slate-950 shadow-md truncate">' +
+        tile.name +
+      '</div>' +
+      '<div class="flex-grow flex flex-col items-center justify-center my-0.5 relative">' +
+        '<span id="tile-house-visual-' + tile.id + '" class="text-xl filter drop-shadow-[0_2px_4px_rgba(255,255,255,0.05)]">' +
+          getPropertyEmoji(tile.type, state ? state.level : 0) +
+        '</span>' +
+        '<div id="tile-owner-indicator-' + tile.id + '" class="absolute bottom-0 text-[10px] font-black px-1 rounded shadow-lg"></div>' +
+      '</div>' +
+      '<div class="text-[9px] text-slate-500 text-center font-bold tracking-tight truncate" id="tile-footer-' + tile.id + '">' +
+        subText +
+      '</div>' +
+      '<div id="tile-players-holder-' + tile.id + '" class="absolute inset-x-0 bottom-1 flex justify-center gap-1 flex-wrap z-10 pointer-events-none px-1"></div>';
     container.appendChild(tileDiv);
   });
 
@@ -225,93 +295,65 @@ function renderBoard() {
   updatePropertiesUI();
 }
 
-// --- 地标与物主边框逻辑渲染 ---
 function updatePropertiesUI() {
   mapStates.forEach(state => {
     const tile = TILE_DEFS[state.id];
-    const tileDiv = document.getElementById(`tile-${state.id}`);
+    const tileDiv = document.getElementById("tile-" + state.id);
     if (!tile || !tileDiv) return;
 
     if (tile.type !== "LAND") return;
 
     const ownerId = state.owner;
-    const indicator = document.getElementById(`tile-owner-indicator-${state.id}`);
-    const footer = document.getElementById(`tile-footer-${state.id}`);
-    const houseVisual = document.getElementById(`tile-house-visual-${state.id}`);
+    const indicator = document.getElementById("tile-owner-indicator-" + state.id);
+    const footer = document.getElementById("tile-footer-" + state.id);
+    const houseVisual = document.getElementById("tile-house-visual-" + state.id);
 
     if (ownerId !== null) {
       const owner = players.find(p => p.id === ownerId);
       if (owner) {
-        // 物主定制渐变霓虹发光边框
-        if (owner.id === 0) tileDiv.className = `board-tile bg-slate-900 neon-border-pink rounded-2xl p-2.5 flex flex-col justify-between overflow-hidden relative select-none`;
-        else if (owner.id === 1) tileDiv.className = `board-tile bg-slate-900 neon-border-blue rounded-2xl p-2.5 flex flex-col justify-between overflow-hidden relative select-none`;
-        else if (owner.id === 2) tileDiv.className = `board-tile bg-slate-900 neon-border-green rounded-2xl p-2.5 flex flex-col justify-between overflow-hidden relative select-none`;
-        else if (owner.id === 3) tileDiv.className = `board-tile bg-slate-900 neon-border-amber rounded-2xl p-2.5 flex flex-col justify-between overflow-hidden relative select-none`;
+        if (owner.id === 0) tileDiv.className = "board-tile bg-slate-900 neon-border-pink rounded-xl p-2 flex flex-col justify-between overflow-hidden relative select-none";
+        else if (owner.id === 1) tileDiv.className = "board-tile bg-slate-900 neon-border-blue rounded-xl p-2 flex flex-col justify-between overflow-hidden relative select-none";
+        else if (owner.id === 2) tileDiv.className = "board-tile bg-slate-900 neon-border-green rounded-xl p-2 flex flex-col justify-between overflow-hidden relative select-none";
+        else if (owner.id === 3) tileDiv.className = "board-tile bg-slate-900 neon-border-amber rounded-xl p-2 flex flex-col justify-between overflow-hidden relative select-none";
 
-        indicator.className = `absolute bottom-0 text-[10px] text-slate-950 font-black px-1.5 py-0.5 rounded bg-white shadow-lg`;
-        indicator.textContent = owner.name.split(' ')[0];
+        indicator.className = "absolute bottom-0 text-[10px] text-slate-950 font-black px-1.5 py-0.5 rounded bg-white shadow-lg";
+        indicator.textContent = owner.name.split(" ")[0];
         
         const finalRent = calculateRent(state.id);
-        footer.innerHTML = `<span class="text-rose-400 font-extrabold">租金:$${finalRent}</span>`;
+        footer.innerHTML = "<span class=\"text-rose-400 font-extrabold\">租金:$" + finalRent + "</span>";
         houseVisual.textContent = getPropertyEmoji("LAND", state.level);
       }
     } else {
-      tileDiv.className = `board-tile bg-slate-900 border border-slate-800/80 rounded-2xl p-2.5 flex flex-col justify-between overflow-hidden shadow relative select-none`;
+      tileDiv.className = "board-tile bg-slate-900 border border-slate-800/80 rounded-xl p-2 flex flex-col justify-between overflow-hidden shadow relative select-none";
       indicator.className = "hidden";
       indicator.textContent = "";
-      footer.innerHTML = `<span class="text-slate-500 font-bold">地价:$${tile.cost}</span>`;
+      footer.innerHTML = "<span class=\"text-slate-500 font-bold\">地价:$" + tile.cost + "</span>";
       houseVisual.textContent = "🌳";
     }
   });
 }
 
-// --- 棋子重定向及同步 ---
 function updatePlayerPositionsUI() {
   for (let i = 0; i < MAP_LENGTH; i++) {
-    const h = document.getElementById(`tile-players-holder-${i}`);
+    const h = document.getElementById("tile-players-holder-" + i);
     if (h) h.innerHTML = "";
   }
 
   players.forEach(p => {
     if (p.isBankrupt) return;
-    const holder = document.getElementById(`tile-players-holder-${p.position}`);
+    const holder = document.getElementById("tile-players-holder-" + p.position);
     if (holder) {
       const pBadge = document.createElement("div");
+      pBadge.id = "player-badge-" + p.id;
       const activeClass = (players[currentTurnIndex].id === p.id) ? "animate-bounce ring-4 ring-yellow-400 z-20" : "ring-1 ring-white/50";
-      pBadge.className = `w-7 h-7 rounded-full flex items-center justify-center text-lg shadow-lg relative cursor-pointer ${p.color} ${activeClass} transition-all duration-350`;
-      pBadge.innerHTML = `
-        ${p.avatar}
-        ${p.god ? `<span class="absolute -top-1.5 -right-1.5 text-xs">${getGodBadgeEmoji(p.god.type)}</span>` : ""}
-      `;
+      pBadge.className = "w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-sm sm:text-base shadow-lg relative cursor-pointer " + p.color + " " + activeClass + " transition-all duration-350";
+      pBadge.innerHTML = p.avatar + (p.god ? ("<span class=\"absolute -top-1.5 -right-1.5 text-xs\">" + getGodBadgeEmoji(p.god.type) + "</span>") : "");
       holder.appendChild(pBadge);
     }
   });
 }
 
-function getPropertyEmoji(type, level) {
-  if (type !== "LAND") {
-    if (type === "START") return "🏁";
-    if (type === "STOCK_EXCHANGE") return "🏦";
-    if (type === "GOD_SHRINE") return "⛩️";
-    if (type === "HOSPITAL") return "🏥";
-    if (type === "PRISON") return "🚓";
-    return "🔮";
-  }
-  if (!level || level === 0) return "🌳";
-  if (level === 1) return "🏡";
-  if (level === 2) return "🏠";
-  if (level === 3) return "🏢";
-  if (level === 4) return "🏨";
-  return "🏰";
-}
-
-function getGodBadgeEmoji(type) {
-  if (type === "wealth") return "😇";
-  if (type === "misfortune") return "😈";
-  return "🧙";
-}
-
-// --- 回合转换逻辑器 ---
+// --- 回合循环引擎 ---
 function startPlayerTurn() {
   const p = players[currentTurnIndex];
 
@@ -322,18 +364,26 @@ function startPlayerTurn() {
 
   document.getElementById("current-player-avatar").textContent = p.avatar;
   document.getElementById("current-player-name").textContent = p.name;
-  document.getElementById("round-counter").textContent = `第 ${roundCount} 轮`;
+  document.getElementById("round-counter").textContent = "第 " + roundCount + " 轮";
+
+  // 同步更新彩票界面
+  document.getElementById("lottery-pool").textContent = "$" + lotteryPool.toLocaleString();
+  document.getElementById("lottery-countdown").textContent = "开奖倒计时: " + (10 - (roundCount % 10)) + "轮";
+  
+  const ticket = lotteryTickets[p.id];
+  document.getElementById("lottery-my-num").textContent = ticket ? (ticket + " 号") : "未投注";
 
   document.getElementById("btn-end-turn").disabled = true;
   document.getElementById("btn-roll").disabled = false;
+  document.getElementById("btn-buy-lottery").disabled = ticket ? true : false;
   
   updatePlayerPositionsUI();
   updatePlayerRanksUI();
 
   if (p.skipTurns > 0) {
     p.skipTurns--;
-    addLog(`🏥 [${p.name}] 正在休息或禁足，无法行动（剩余回合: ${p.skipTurns}）。`, "text-slate-500");
-    document.getElementById("quick-tip").textContent = `${p.name} 禁足中，本回合自动跳过。`;
+    addLog("[" + p.name + "] 强制静养禁足中，无法行动（剩余回合: " + p.skipTurns + "）。", "text-slate-500");
+    document.getElementById("quick-tip").textContent = p.name + " 住院/拘留，自动跳过回合。";
     
     document.getElementById("btn-end-turn").disabled = false;
     document.getElementById("btn-roll").disabled = true;
@@ -344,41 +394,78 @@ function startPlayerTurn() {
     return;
   }
 
+  // 智慧神额外特权清除
+  p.hasExtraRoll = false;
+
   if (p.god) {
     p.god.turnsLeft--;
     if (p.god.turnsLeft <= 0) {
-      addLog(`✨ [${p.name}] 头顶的神明 [${getGodName(p.god.type)}] 护法期限结束，化为灵气消散。`, "text-slate-400");
+      addLog("✨ [" + p.name + "] 头顶的神仙 [" + getGodName(p.god.type) + "] 护法期满，离开。");
       p.god = null;
     } else {
       triggerGodBuffStartOfTurn(p);
     }
   }
 
-  document.getElementById("quick-tip").textContent = `轮到 [${p.name}] 操作。`;
+  document.getElementById("quick-tip").textContent = "轮到 [" + p.name + "] 操作。";
+
+  // AI 智能彩票投注行为
+  if (p.isAI && !ticket && Math.random() > 0.6) {
+    setTimeout(() => {
+      aiBuyLottery(p);
+    }, 400);
+  }
 
   if (p.isAI) {
     setTimeout(() => {
       triggerDiceRoll();
-    }, 1000);
+    }, 1100);
   }
 }
 
 function triggerGodBuffStartOfTurn(player) {
   if (!player.god) return;
   if (player.god.type === "wealth") {
-    const bonus = Math.floor(Math.random() * 400) + 200;
-    player.cash += bonus;
-    addLog(`💰 财神眷顾！[${player.name}] 获得神降红包：+$${bonus}！`, "text-yellow-400 font-bold");
-    if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
-  } else if (player.god.type === "misfortune") {
-    const loss = Math.floor(Math.random() * 300) + 150;
-    player.cash = Math.max(0, player.cash - loss);
-    addLog(`💸 衰神降头！[${player.name}] 财务遭遇无端损失：-$${loss}。`, "text-purple-400");
-    if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
+    const bonus = Math.floor(Math.random() * 800) + 400;
+    adjustPlayerCash(player, bonus);
+    addLog("💰 财神显灵！天降巨额现金红包送给 [" + player.name + "]：+$" + bonus + "！", "text-yellow-400 font-bold");
+    if (window.sound) window.sound.playCoin();
   }
 }
 
-// --- 3D物理物理骰子驱动 ---
+// --- 🎟️ 彩票购买机制 ---
+function buyLotteryTicket() {
+  const p = players[currentTurnIndex];
+  if (p.isBankrupt || lotteryTickets[p.id]) return;
+
+  if (p.cash >= 500) {
+    const randomNum = Math.floor(Math.random() * 50) + 1; // 1-50随机数
+    adjustPlayerCash(p, -500);
+    lotteryTickets[p.id] = randomNum;
+    lotteryPool += 500;
+
+    document.getElementById("lottery-pool").textContent = "$" + lotteryPool.toLocaleString();
+    document.getElementById("lottery-my-num").textContent = randomNum + " 号";
+    document.getElementById("btn-buy-lottery").disabled = true;
+
+    addLog("🎟️ [" + p.name + "] 斥资 $500 购买了彩票，投注幸运数字: [" + randomNum + " 号]！", "text-yellow-300");
+    if (window.sound) window.sound.playCoin();
+  } else {
+    alert("你的现金不足，无法购买彩票！");
+  }
+}
+
+function aiBuyLottery(aiPlayer) {
+  if (aiPlayer.cash >= 1500) {
+    const randomNum = Math.floor(Math.random() * 50) + 1;
+    aiPlayer.cash -= 500;
+    lotteryTickets[aiPlayer.id] = randomNum;
+    lotteryPool += 500;
+    addLog("🎟️ AI [" + aiPlayer.name + "] 自动跟投 $500 购买彩票，幸运数字: [" + randomNum + " 号]。", "text-yellow-400");
+  }
+}
+
+// --- 掷骰前进机制 ---
 function triggerDiceRoll() {
   if (isDiceRolling || players[currentTurnIndex].isBankrupt) return;
   
@@ -388,7 +475,7 @@ function triggerDiceRoll() {
 
   const diceEl = document.getElementById("dice-element");
   diceEl.classList.add("dice-rolling");
-  if (window.sound && typeof window.sound.playDice === "function") window.sound.playDice();
+  if (window.sound) window.sound.playDice();
 
   let diceValue = 1;
   let counter = 0;
@@ -401,15 +488,10 @@ function triggerDiceRoll() {
       diceEl.classList.remove("dice-rolling");
       isDiceRolling = false;
       
-      addLog(`🎲 [${p.name}] 掷出了骰子，数额为 [${diceValue}]。`, "text-slate-100");
+      addLog("🎲 [" + p.name + "] 掷出了骰子，结果为 [" + diceValue + "] 点。", "text-slate-100");
       movePlayerStepByStep(p, diceValue);
     }
-  }, 70);
-}
-
-function getDiceFace(val) {
-  const faces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
-  return faces[val - 1] || "⚀";
+  }, 75);
 }
 
 function movePlayerStepByStep(player, steps) {
@@ -419,8 +501,8 @@ function movePlayerStepByStep(player, steps) {
     player.position = (player.position + 1) % MAP_LENGTH;
     
     if (player.position === 0 && currentStep < steps - 1) {
-      player.cash += passStartBonus;
-      addLog(`🏪 [${player.name}] 疾步路过起点，财务奖励下发：+$${passStartBonus}！`, "text-emerald-400 font-bold");
+      adjustPlayerCash(player, passStartBonus);
+      addLog("🏪 [" + player.name + "] 疾步路过起点，下发奖励资金：+$" + passStartBonus + "！", "text-emerald-400 font-bold");
       if (window.sound) window.sound.playCoin();
     }
 
@@ -431,84 +513,82 @@ function movePlayerStepByStep(player, steps) {
       clearInterval(moveInterval);
       evaluateLandingTile(player, player.position);
     }
-  }, 180);
+  }, 160);
 }
 
-// --- 地理位置业务决断 ---
+// --- 停靠地格事件判定 ---
 function evaluateLandingTile(player, tileId) {
   const tile = TILE_DEFS[tileId];
   const state = mapStates[tileId];
 
-  document.getElementById("quick-tip").textContent = `[${player.name}] 在 [${tile.name}] 格子驻足。`;
+  document.getElementById("quick-tip").textContent = "[" + player.name + "] 停靠在 [" + tile.name + "]";
 
   if (tile.type === "HOSPITAL" || tile.type === "PRISON") {
     player.skipTurns = 2;
-    const reason = tile.type === "HOSPITAL" ? "需要静养 2 回合 🏥。" : "面壁思过 2 回合 🚓。";
-    showEventModal("🚨 环境限行", `[${player.name}] 误入 ${tile.name}，${reason}`, "🚨");
-    addLog(`🚨 [${player.name}] 触发禁足规定，本轮进入 [${tile.name}] 格子暂停 2 轮。`, "text-rose-400");
-    if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
+    const reason = tile.type === "HOSPITAL" ? "需要静养 2 回合 🏥。" : "遭到警方拘留思过 2 回合 🚓。";
+    showEventModal("🚨 环境限行", "[" + player.name + "] 进入了 " + tile.name + "，" + reason, "🚨");
+    addLog("🚨 [" + player.name + "] 误入 [" + tile.name + "] 区域，本轮禁足 2 回合。", "text-red-400");
+    if (window.sound) window.sound.playMisfortune();
     prepareEndTurn();
     return;
   }
 
   if (tile.type === "START") {
-    player.cash += passStartBonus;
-    addLog(`🏪 [${player.name}] 精确踩中起点格子，财务双倍发红利：+$${passStartBonus}！`, "text-emerald-400 font-bold");
-    if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
+    adjustPlayerCash(player, passStartBonus);
+    addLog("🏪 [" + player.name + "] 精准降落起点！下发双倍奖金：+$" + passStartBonus + "！", "text-emerald-400 font-bold");
+    if (window.sound) window.sound.playCoin();
     prepareEndTurn();
     return;
   }
 
-  if (tile.type === "STOCK_EXCHANGE") {
-    showEventModal("📈 证券交易所", `[${player.name}] 进入了交易所，可以在此进行股票交易，核算你的持仓盈亏。`, "💵");
-    addLog(`📈 [${player.name}] 进入交易所特许经营板块。`, "text-emerald-400");
-    if (!player.isAI) {
-      openStockMarket();
-    } else {
-      simulateAISmartStockTrade(player);
-    }
-    prepareEndTurn();
+  // ⛩️ 神庙明码现金购买神明
+  if (tile.type === "GOD_SHRINE") {
+    promptShrineModal(player);
     return;
   }
 
   if (tile.type === "LAND") {
-    if (state.owner !== null && state.owner !== player.id && player.god?.type === "earth") {
-      addLog(`🧙 土地公作法！帮助 [${player.name}] 直接豁免了全部地产过路费！`, "text-green-400 font-bold");
+    // 土地公特权免疫
+    if (state.owner !== null && state.owner !== player.id && player.god && player.god.type === "earth") {
+      addLog("🧙 土地神显灵保佑！免付对手 [" + player.name + "] 城市过路费！", "text-green-400 font-bold");
       prepareEndTurn();
       return;
     }
 
     if (state.owner === null) {
-      if (player.god?.type === "earth") {
+      // 土地神免费圈地
+      if (player.god && player.god.type === "earth") {
         state.owner = player.id;
         state.level = 1;
-        addLog(`🧙 土地公作法！直接帮 [${player.name}] 免费占领了空地 [${tile.name}]！`, "text-green-400 font-bold");
+        addLog("🧙 土地神作法！免费将无主城市 [" + tile.name + "] 划归为 [" + player.name + "] 的产业！", "text-green-400 font-bold");
         updatePropertiesUI();
-        if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
+        if (window.sound) window.sound.playCoin();
         prepareEndTurn();
       } else {
         promptPropertyModal(tile, state, "buy");
       }
     } else if (state.owner === player.id) {
-      if (player.god?.type === "earth") {
+      // 土地神免费升摩天大楼
+      if (player.god && player.god.type === "earth") {
         if (state.level < 5) {
           state.level++;
-          addLog(`🧙 土地公吹气！免费将 [${player.name}] 的房产 [${tile.name}] 级别拔高至 Lv.${state.level}！`, "text-green-400 font-bold");
+          addLog("🧙 土地神赠礼！免费为 [" + player.name + "] 的城市 [" + tile.name + "] 向上加盖一层 (当前Lv." + state.level + ")！", "text-green-400 font-bold");
           updatePropertiesUI();
-          if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
+          if (window.sound) window.sound.playCoin();
         } else {
-          addLog(`🏰 [${player.name}] 名下的 [${tile.name}] 已经达到了顶级城堡！`, "text-yellow-400");
+          addLog("🏰 [" + player.name + "] 拥有的城市 [" + tile.name + "] 已经是最高顶级庄园！");
         }
         prepareEndTurn();
       } else {
         if (state.level < 5) {
           promptPropertyModal(tile, state, "upgrade");
         } else {
-          addLog(`🏰 [${player.name}] 巡视视察了名下的豪华城堡 [${tile.name}]，心中无限欢喜。`, "text-yellow-400");
+          addLog("🏰 [" + player.name + "] 拥有的城市 [" + tile.name + "] 已经是最高顶级庄园！");
           prepareEndTurn();
         }
       }
     } else {
+      // 支付租金
       collectRentLogic(player, state.owner, tileId);
     }
     return;
@@ -519,46 +599,27 @@ function evaluateLandingTile(player, tileId) {
     return;
   }
 
-  if (tile.type === "GOD_SHRINE") {
-    triggerGodShrine(player);
-    return;
-  }
-
   prepareEndTurn();
 }
 
-function calculateRent(tileId) {
-  const tile = TILE_DEFS[tileId];
-  const state = mapStates[tileId];
-  if (!tile || !state || tile.type !== "LAND") return 0;
-  return tile.rent * Math.pow(2, state.level);
-}
-
-// --- 综合资产清算核算机制 ---
 function collectRentLogic(renter, ownerId, tileId) {
   const owner = players.find(p => p.id === ownerId);
   const originalRent = calculateRent(tileId);
   let finalRent = originalRent;
 
-  if (renter.god?.type === "misfortune") {
-    finalRent *= 2;
-  } else if (renter.god?.type === "wealth") {
-    finalRent = Math.floor(finalRent / 2);
-  }
+  if (renter.god && renter.god.type === "misfortune") finalRent *= 2;
+  else if (renter.god && renter.god.type === "wealth") finalRent = Math.floor(finalRent / 2);
 
-  if (owner.god?.type === "wealth") {
-    finalRent *= 2;
-  } else if (owner.god?.type === "misfortune") {
-    finalRent = Math.floor(finalRent / 2);
-  }
+  if (owner.god && owner.god.type === "wealth") finalRent *= 2;
+  else if (owner.god && owner.god.type === "misfortune") finalRent = Math.floor(finalRent / 2);
 
-  addLog(`💸 [${renter.name}] 踏入 [${owner.name}] 的领地 [${TILE_DEFS[tileId].name}]，需支付过路费 $${finalRent}。`, "text-orange-400");
+  addLog("💸 [" + renter.name + "] 行经 [" + owner.name + "] 城市的关卡，需缴纳通行费 $" + finalRent + " (基础: $" + originalRent + ")。");
   
   if (renter.cash >= finalRent) {
-    renter.cash -= finalRent;
-    owner.cash += finalRent;
-    addLog(`💰 [${renter.name}] 全额支付过路租金，$${finalRent} 计入 [${owner.name}] 的可用现金。`, "text-slate-400");
-    if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
+    adjustPlayerCash(renter, -finalRent);
+    adjustPlayerCash(owner, finalRent);
+    addLog("💰 [" + renter.name + "] 支付了过路费，" + owner.name + " 钞票落袋！", "text-slate-300");
+    if (window.sound) window.sound.playCoin();
     prepareEndTurn();
   } else {
     triggerLiquidationToPay(renter, owner, finalRent);
@@ -566,32 +627,9 @@ function collectRentLogic(renter, ownerId, tileId) {
 }
 
 function triggerLiquidationToPay(renter, creditor, debt) {
-  addLog(`🚨 [${renter.name}] 可用现金枯竭！被迫执行破产清盘变卖(股票/地产)自救！`, "text-rose-500 font-bold");
+  addLog("🚨 [" + renter.name + "] 现金不足以偿还债务，启动土地拆卖清算机制！", "text-rose-500 font-bold");
   
-  gameStocks.forEach(s => {
-    const held = renter.stockHoldings[s.symbol] || 0;
-    if (held > 0) {
-      const cashBack = Math.floor(held * s.price);
-      const costBasis = renter.stockCosts[s.symbol] || 0;
-      const profit = Math.floor(held * (s.price - costBasis));
-      const profitStr = profit >= 0 ? `盈利 +$${profit}` : `亏损 $${Math.abs(profit)}`;
-
-      renter.cash += cashBack;
-      renter.stockHoldings[s.symbol] = 0;
-      renter.stockCosts[s.symbol] = 0;
-
-      addLog(`💱 强制平仓：清仓 [${s.name}] ${held} 股，折现资金 $${cashBack} (${profitStr})。`, "text-yellow-400");
-    }
-  });
-
-  if (renter.cash >= debt) {
-    renter.cash -= debt;
-    creditor.cash += debt;
-    addLog(`✅ [${renter.name}] 通过平仓变现股票成功解除债务，支付过路费。`, "text-green-400");
-    prepareEndTurn();
-    return;
-  }
-
+  // 强制倒卖地产自救 (折价70%)
   for (let i = 0; i < mapStates.length; i++) {
     const state = mapStates[i];
     if (state.owner === renter.id) {
@@ -600,9 +638,9 @@ function triggerLiquidationToPay(renter, creditor, debt) {
       
       state.owner = null;
       state.level = 0;
-      renter.cash += refundPrice;
+      adjustPlayerCash(renter, refundPrice);
       
-      addLog(`🏘️ 破产清算：司法拍卖 [${tile.name}] 产权，变现补偿金: $${refundPrice}。`, "text-yellow-500");
+      addLog("🏘️ 强制清算：倒卖折标城市 [" + tile.name + "] 房产权，变现补偿资金: +$" + refundPrice);
       updatePropertiesUI();
 
       if (renter.cash >= debt) {
@@ -612,9 +650,9 @@ function triggerLiquidationToPay(renter, creditor, debt) {
   }
 
   if (renter.cash >= debt) {
-    renter.cash -= debt;
-    creditor.cash += debt;
-    addLog(`✅ [${renter.name}] 通过重组拍卖地产成功偿还了债务。`, "text-green-400");
+    adjustPlayerCash(renter, -debt);
+    adjustPlayerCash(creditor, debt);
+    addLog("✅ [" + renter.name + "] 资产倒卖结束，还清所有通行债务，度过破产劫难。", "text-green-400");
     prepareEndTurn();
   } else {
     declareBankruptcy(renter, creditor);
@@ -623,12 +661,13 @@ function triggerLiquidationToPay(renter, creditor, debt) {
 
 function declareBankruptcy(player, creditor) {
   player.isBankrupt = true;
-  addLog(`💀 商业破产：[${player.name}] 资产彻底清算后无力偿还债务，宣告破产出局！`, "text-rose-600 font-black text-sm");
-  if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
+  addLog("💀 轰烈倒闭！[" + player.name + "] 所有的土地拆标售罄依然不抵债务，宣告破产出局！", "text-red-500 font-bold");
+  if (window.sound) window.sound.playMisfortune();
 
   if (player.cash > 0 && creditor) {
-    creditor.cash += player.cash;
-    player.cash = 0;
+    const leftover = player.cash;
+    adjustPlayerCash(player, -leftover);
+    adjustPlayerCash(creditor, leftover);
   }
 
   mapStates.forEach(state => {
@@ -650,15 +689,15 @@ function checkGameOver() {
   const activePlayers = players.filter(p => !p.isBankrupt);
   if (activePlayers.length === 1) {
     const winner = activePlayers[0];
-    showEventModal("👑 终极财阀诞生！", `恭喜 [${winner.name}] 在这场风云诡谲、神仙乱斗的全球股市大战中站到最后，笑傲商海！`, "👑");
-    addLog(`🏆 战役宣告终结！最终的商海霸主是：[${winner.name}]！`, "text-yellow-400 font-black text-base");
+    showEventModal("👑 帝国终极之主", `恭喜 [${winner.name}] 在这场跨越百个都市的环球大富翁大地图争霸战中，令所有财阀破产，问鼎世界首富！`, "🏆");
+    addLog(`🏆 争霸战宣告结束！环球首富头衔属于：[${winner.name}]！`, "text-yellow-400 font-bold");
     
     document.getElementById("btn-roll").disabled = true;
     document.getElementById("btn-end-turn").disabled = true;
   }
 }
 
-// --- 各类商业契约 Modals 弹窗 ---
+// --- 🏠 地产购置 Modal 弹窗 ---
 function promptPropertyModal(tile, state, actionType) {
   currentPropPending = { tile, state, actionType };
   const player = players[currentTurnIndex];
@@ -675,34 +714,32 @@ function promptPropertyModal(tile, state, actionType) {
   colorBar.className = `h-3 w-full rounded-full mb-4 bg-gradient-to-r ${tile.color}`;
 
   if (actionType === "buy") {
-    title.textContent = `投资：${tile.name}`;
-    desc.textContent = tile.desc;
+    title.textContent = `收购：${tile.name}`;
+    desc.textContent = "这是一块无主土地。收购后建立你的商业关卡卡口，坐享滚滚租金！";
     costEl.textContent = `$${tile.cost}`;
     levelEl.textContent = "空地 (Lv.0)";
     rentEl.textContent = `$${tile.rent}`;
-    confirmBtn.textContent = "立即购入";
+    confirmBtn.textContent = "契约购入";
   } else {
-    title.textContent = `加盖扩建：${tile.name}`;
-    desc.textContent = "加盖多层商业中心 or 摩天大楼，成倍提升路过税收！";
+    title.textContent = `升级：${tile.name}`;
+    desc.textContent = "加盖豪华酒店、摩天庄园或摩天城堡，收取几何倍翻番的巨额租金！";
     const buildCost = Math.floor(tile.cost * 0.5);
     costEl.textContent = `$${buildCost}`;
     levelEl.textContent = `当前等级: Lv.${state.level}`;
     const nextRent = tile.rent * Math.pow(2, state.level + 1);
     rentEl.textContent = `$${nextRent} (升级后)`;
-    confirmBtn.textContent = "确认加层";
+    confirmBtn.textContent = "加盖大厦";
   }
 
   if (player.isAI) {
     let aiDecision = false;
     const requiredCash = actionType === "buy" ? tile.cost : Math.floor(tile.cost * 0.5);
-    
-    if (player.cash >= requiredCash + 1500) {
+    if (player.cash >= requiredCash + 2000) {
       aiDecision = true;
     }
-
     setTimeout(() => {
       confirmPropertyAction(aiDecision);
-    }, 1200);
+    }, 1100);
   } else {
     modal.classList.remove("hidden");
   }
@@ -718,132 +755,127 @@ function confirmPropertyAction(agree) {
   if (agree) {
     const requiredCash = actionType === "buy" ? tile.cost : Math.floor(tile.cost * 0.5);
     if (player.cash >= requiredCash) {
-      player.cash -= requiredCash;
+      adjustPlayerCash(player, -requiredCash);
       if (actionType === "buy") {
         state.owner = player.id;
         state.level = 1;
-        addLog(`🏘️ 地产契约：[${player.name}] 砸下 $${requiredCash}，将 [${tile.name}] 产权收入囊中！`, "text-pink-400");
+        addLog(`🏘️ 都市扩张：[${player.name}] 砸下 $${requiredCash}，将 [${tile.name}] 的城市收归麾下！`, "text-pink-400");
       } else {
         state.level++;
-        addLog(`🏢 地产加盖：[${player.name}] 砸下工程款 $${requiredCash}，将 [${tile.name}] 扩建至 Lv.${state.level} 商业城！`, "text-cyan-400");
+        addLog(`🏢 大厦平地起：[${player.name}] 支付 $${requiredCash} 工程款，将 [${tile.name}] 盖至 Lv.${state.level} 庄园！`, "text-cyan-400");
       }
       if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
       updatePropertiesUI();
     } else {
-      addLog(`❌ 财务阻碍：[${player.name}] 资本储备不足，放弃了在 [${tile.name}] 的投资扩建。`, "text-rose-400");
+      addLog(`❌ 财务短缺：[${player.name}] 无法拿出足够资金用于 [${tile.name}] 的契约，放弃了机会。`, "text-rose-400");
     }
   } else {
-    addLog(`💤 [${player.name}] 战略性放弃了在 [${tile.name}] 进行地产运作的决策。`, "text-slate-500");
+    addLog(`💤 [${player.name}] 战略性放弃了对 [${tile.name}] 地皮的运营契机。`, "text-slate-500");
   }
 
   currentPropPending = null;
   prepareEndTurn();
 }
 
-// --- 神明神明大殿与命运机会 ---
-function triggerGodShrine(player) {
-  const gods = [
-    { type: "wealth", name: "大财神 😇", desc: "财神加身 5 轮！过路税减半，收过路费翻倍，且每轮开盘降下随机红包！" },
-    { type: "misfortune", name: "大衰神 😈", desc: "衰神降头 5 轮！过路税翻倍，己方地带路过租金免半，且每轮钱包破漏丢现金！" },
-    { type: "earth", name: "土地公 🧙", desc: "土地公护法 5 轮！路过无主荒地免费强占，自持地免费白嫖加层，且对手地免收租！" }
-  ];
-
-  const selected = gods[Math.floor(Math.random() * gods.length)];
-  player.god = {
-    type: selected.type,
-    turnsLeft: GOD_TURNS
-  };
-
-  if (window.sound && typeof window.sound.playGodArrival === "function") window.sound.playGodArrival();
-  showEventModal(selected.name, `[${player.name}] 诚心在庙宇进香，迎来 [${selected.name}] 附体 5 轮！\n\n特权：${selected.desc}`, "✨");
-  addLog(`✨ 神明显显：[${player.name}] 迎来 [${selected.name}] 降临随行护身。`, "text-yellow-400 font-bold");
-  
-  updatePlayerPositionsUI();
-  prepareEndTurn();
-}
-
-function triggerRandomEvent(player) {
-  const events = [
-    {
-      title: "美股狂飙牛市 📈",
-      text: "受宏观情绪利好，全球证券价格瞬间大涨 15%！",
-      action: () => {
-        gameStocks.forEach(s => {
-          s.price = parseFloat((s.price * 1.15).toFixed(2));
-          s.trend.push(s.price);
-        });
-        updateStockTickerUI();
-        addLog("📣 股市战报：受宏观牛市刺激，盘面所有股票逆天大涨 15%！", "text-emerald-400 font-bold");
-      }
-    },
-    {
-      title: "美债收益黑天鹅 📉",
-      text: "因流动性恐慌席卷硅谷，全线股票价格闪崩 12%！",
-      action: () => {
-        gameStocks.forEach(s => {
-          s.price = parseFloat((s.price * 0.88).toFixed(2));
-          s.trend.push(s.price);
-        });
-        updateStockTickerUI();
-        addLog("📣 股市战报：黑天鹅空袭，盘面全线股票闪崩 12%！", "text-rose-400 font-bold");
-      }
-    },
-    {
-      title: "喜提产业扶持大基金 🎁",
-      text: "由于合规管理得当，喜获政府商业产业创新大基金扶持：+$2,000！",
-      action: () => {
-        player.cash += 2000;
-        if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
-      }
-    },
-    {
-      title: "反垄断巨额罚单 💸",
-      text: "遭遇不正当竞争反垄断重罚，强制向总台补缴罚没准备金：-$1,500！",
-      action: () => {
-        player.cash = Math.max(0, player.cash - 1500);
-        if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
-      }
-    },
-    {
-      title: "福运神仙当街护卫 🧙",
-      text: "偶遇神明游戏，直接随机迎来一位神随身护驾 4 回合！",
-      action: () => {
-        const types = ["wealth", "earth"];
-        const t = types[Math.floor(Math.random() * types.length)];
-        player.god = { type: t, turnsLeft: 4 };
-        if (window.sound && typeof window.sound.playGodArrival === "function") window.sound.playGodArrival();
-        addLog(`🧙 神意恩赐：[${player.name}] 遇到神随行护航 4 轮！`);
-      }
-    },
-    {
-      title: "通胀恶化风暴袭击 💣",
-      text: "恶性通货膨胀风暴来袭，强制造成玩家大额资产流失：-$1,800！",
-      action: () => {
-        player.cash = Math.max(0, player.cash - 1800);
-        if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
-      }
+// --- ⛩️ 神仙庙购买附体神仙系统 (10% 资产标价) ---
+function promptShrineModal(player) {
+  if (player.isAI) {
+    // AI 决策行为：如果总资产充裕，有 40% 几率购买智慧神，30%大财神，30%土地公
+    const price = Math.floor(calculateNetWorth(player) * 0.1);
+    if (player.cash >= price + 1000) {
+      const roll = Math.random();
+      if (roll > 0.6) buyGod("wisdom");
+      else if (roll > 0.3) buyGod("wealth");
+      else buyGod("earth");
+    } else {
+      addLog(`⛩️ [${player.name}] 行经神庙，盘算当前功德香火钱不划算，未作购买。`);
+      prepareEndTurn();
     }
-  ];
+    return;
+  }
 
-  const selected = events[Math.floor(Math.random() * events.length)];
-  selected.action();
+  // 为人类更新三个神明在当前总资产下折合 10% 的实时现金标价
+  const price = Math.floor(calculateNetWorth(player) * 0.1);
+  document.getElementById("god-price-wealth").textContent = "$" + price.toLocaleString();
+  document.getElementById("god-price-earth").textContent = "$" + price.toLocaleString();
+  document.getElementById("god-price-wisdom").textContent = "$" + price.toLocaleString();
 
-  showEventModal(selected.title, `[${player.name}] 遭遇商业命运抉择：\n\n${selected.text}`, "🔮");
-  addLog(`🎰 命运揭晓：[${player.name}] 遭遇了 [${selected.title}] 事件！`, "text-purple-400");
-  
-  updatePlayerRanksUI();
+  document.getElementById("shrine-modal").classList.remove("hidden");
+}
+
+function closeShrineModal() {
+  document.getElementById("shrine-modal").classList.add("hidden");
+  addLog(`⛩️ [${players[currentTurnIndex].name}] 步出神庙，没有购买香火神明。`);
   prepareEndTurn();
 }
 
-// --- 周期交替及资产刷新引擎 ---
+function buyGod(godType) {
+  document.getElementById("shrine-modal").classList.add("hidden");
+  const p = players[currentTurnIndex];
+  const price = Math.floor(calculateNetWorth(p) * 0.1);
+
+  if (p.cash >= price) {
+    adjustPlayerCash(p, -price);
+    p.god = {
+      type: godType,
+      turnsLeft: GOD_TURNS
+    };
+    
+    // 播放神明降临音效
+    if (window.sound && typeof window.sound.playGodArrival === "function") window.sound.playGodArrival();
+
+    const gName = getGodName(godType);
+    let desc = "";
+    if (godType === "wisdom") desc = "【智慧神附体🧠】：每回合掷骰并移动完毕后，将额外获得一次投骰子移动的权力！";
+    else if (godType === "wealth") desc = "【大财神附体😇】：后续 5 回合开始时，降临大额现金红包。";
+    else desc = "【土地公附体🧙】：后续 5 回合内，免疫对手地通行费，行经自地免费盖大厦。";
+
+    showEventModal(gName + " 恩赐降临！", "恭喜 " + p.name + "，诚心香火请来神仙庇护！\n\n神明效果：" + desc, "✨");
+    addLog("✨ [" + p.name + "] 邀请到了 [" + gName + "] 全程庇护！资产 10% 付出: -$" + price, "text-yellow-400 font-bold");
+  } else {
+    alert("你的可用现金不足以支付 10% 的香火功德金！");
+    addLog(`❌ [${p.name}] 试图购买神力，但口袋里的现金香火不够，购买失败。`, "text-rose-400");
+  }
+
+  prepareEndTurn();
+}
+
+function calculateNetWorth(player) {
+  let estateVal = 0;
+  mapStates.forEach(st => {
+    if (st.owner === player.id) {
+      const tile = TILE_DEFS[st.id];
+      estateVal += tile.cost + (st.level * tile.cost * 0.5);
+    }
+  });
+  return player.cash + estateVal;
+}
+
+// --- 🎲 智慧神特权判定、10 轮开奖机制 ---
 function prepareEndTurn() {
   const p = players[currentTurnIndex];
   updatePlayerRanksUI();
 
+  // 🧠 智慧神特权判定：如果附体且在本轮还没额外走过，给予多一次掷骰特权！
+  if (p.god && p.god.type === "wisdom" && !p.hasExtraRoll && !p.isBankrupt && p.skipTurns === 0) {
+    p.hasExtraRoll = true; // 标明已获得并消耗这个特权
+    addLog("🧠 智慧神开启大智慧！【" + p.name + "】被恩赐额外多一次大行动回合！", "text-cyan-400 font-bold");
+    document.getElementById("quick-tip").textContent = "【智慧神再赐一动】请 " + p.name + " 再次掷骰！";
+    document.getElementById("btn-roll").disabled = false;
+    document.getElementById("btn-end-turn").disabled = true;
+
+    if (p.isAI) {
+      setTimeout(() => {
+        triggerDiceRoll();
+      }, 1200);
+    }
+    return;
+  }
+
   if (p.isAI) {
     setTimeout(() => {
       endTurn();
-    }, 1200);
+    }, 1100);
   } else {
     document.getElementById("btn-end-turn").disabled = false;
   }
@@ -854,7 +886,11 @@ function endTurn() {
 
   if (currentTurnIndex === 0) {
     roundCount++;
-    fluctuateStockMarket();
+    
+    // 🎟️ 判定开奖时机 (每 10 轮在 Round 11, 21, 31... 发生开奖前清算)
+    if (roundCount > 1 && (roundCount - 1) % 10 === 0) {
+      drawLotteryJackpot();
+    }
   }
 
   startPlayerTurn();
@@ -864,331 +900,168 @@ function nextTurn() {
   currentTurnIndex = (currentTurnIndex + 1) % players.length;
   if (currentTurnIndex === 0) {
     roundCount++;
-    fluctuateStockMarket();
+    if (roundCount > 1 && (roundCount - 1) % 10 === 0) {
+      drawLotteryJackpot();
+    }
   }
   startPlayerTurn();
 }
 
-function fluctuateStockMarket() {
-  addLog(`🔔 回合交替 第 ${roundCount} 轮：二级股市开盘刷新！`, "text-slate-500 font-bold");
-  
-  gameStocks.forEach(s => {
-    const isUp = Math.random() > 0.48;
-    const magnitude = Math.random() * s.vol;
-    const changeFactor = isUp ? (1 + magnitude) : (1 - magnitude);
-    
-    s.price = parseFloat((s.price * changeFactor).toFixed(2));
-    if (s.price < 5) s.price = 5.0;
+// 🎟️ 时时彩开奖中心开盘
+function drawLotteryJackpot() {
+  const winNum = Math.floor(Math.random() * 50) + 1; // 生成中奖号
+  addLog("🎰 【环球时时彩中心】第 " + ((roundCount-1)/10) + " 届时时彩开盘了！当期中奖幸运数字为：[" + winNum + " 号]！", "text-yellow-400 font-extrabold");
 
-    s.trend.push(s.price);
-    if (s.trend.length > 12) s.trend.shift();
+  // 寻找中奖玩家
+  const winners = [];
+  players.forEach(p => {
+    if (!p.isBankrupt && lotteryTickets[p.id] === winNum) {
+      winners.push(p);
+    }
   });
 
-  updateStockTickerUI();
-  if (!document.getElementById("stock-modal").classList.contains("hidden")) {
-    renderStockMarketDetails();
+  if (winners.length > 0) {
+    const splitMoney = Math.floor(lotteryPool / winners.length);
+    winners.forEach(w => {
+      adjustPlayerCash(w, splitMoney);
+      addLog("🎉🎉 恭喜神算中彩者！【" + w.name + "】买中当期中奖幸运号，独吞/均分当期累积巨款：+$" + splitMoney + "！", "text-emerald-400 font-extrabold");
+    });
+    
+    if (window.sound && typeof window.sound.playJackpot === "function") window.sound.playJackpot();
+    // 奖池重置
+    lotteryPool = 5000;
+  } else {
+    addLog("❌ 本届无任何玩家和 AI 撞中大奖数字 [" + winNum + " 号]！当期奖金滚滚并入下期！累计大奖爆发在即！", "text-slate-400 font-bold");
+    if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
   }
+
+  // 购买记录重置
+  lotteryTickets = {};
 }
 
-// --- AI 量化买卖模拟器 ---
-function simulateAISmartStockTrade(aiPlayer) {
-  gameStocks.forEach(s => {
-    const history = s.trend.slice(-5);
-    if (history.length < 3) return;
-    
-    const currentPrice = s.price;
-    const maxInHistory = Math.max(...history);
-    const minInHistory = Math.min(...history);
-
-    const holdingCount = aiPlayer.stockHoldings[s.symbol] || 0;
-    const costBasis = aiPlayer.stockCosts[s.symbol] || 0;
-    if (holdingCount > 0 && currentPrice >= maxInHistory * 0.9) {
-      const cashBack = Math.floor(holdingCount * s.price);
-      const profit = Math.floor(holdingCount * (s.price - costBasis));
-      const profitStr = profit >= 0 ? `盈利 +$${profit}` : `亏损 $${Math.abs(profit)}`;
-
-      aiPlayer.cash += cashBack;
-      aiPlayer.stockHoldings[s.symbol] = 0;
-      aiPlayer.stockCosts[s.symbol] = 0;
-
-      addLog(`💱 AI 量化交易：[${aiPlayer.name}] 指导平仓 [${s.name}] 全部 ${holdingCount} 股，收回现金 +$${cashBack} (${profitStr})！`, "text-emerald-400");
-      if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
-    }
-
-    if (aiPlayer.cash > 5000 && currentPrice <= minInHistory * 1.1) {
-      const buyCount = Math.floor((aiPlayer.cash * 0.25) / s.price);
-      if (buyCount > 0) {
-        const cost = Math.floor(buyCount * s.price);
-        
-        const held = aiPlayer.stockHoldings[s.symbol] || 0;
-        const currentCost = aiPlayer.stockCosts[s.symbol] || 0;
-        const totalCostBasis = ((held * currentCost) + (buyCount * s.price)) / (held + buyCount);
-
-        aiPlayer.cash -= cost;
-        aiPlayer.stockHoldings[s.symbol] = held + buyCount;
-        aiPlayer.stockCosts[s.symbol] = parseFloat(totalCostBasis.toFixed(2));
-
-        addLog(`💱 AI 量化交易：[${aiPlayer.name}] 低位扫货 [${s.name}] ${buyCount} 股，投资资本 -$${cost} (成本均价:${aiPlayer.stockCosts[s.symbol].toFixed(1)})。`, "text-cyan-400");
-        if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
+// --- 命运与宿命卡大爆料 ---
+function triggerRandomEvent(player) {
+  const events = [
+    {
+      title: "环球大资产税 💸",
+      text: "因名下资产估价攀升，被国税机关按现总资产强制课税：-$1,500！",
+      action: () => {
+        adjustPlayerCash(player, -1500);
+        if (window.sound) window.sound.playMisfortune();
+      }
+    },
+    {
+      title: "宏观产业投资回馈 🎁",
+      text: "因为名下商业拓展出色，获得产业回馈：+$2,500！",
+      action: () => {
+        adjustPlayerCash(player, 2500);
+        if (window.sound) window.sound.playCoin();
+      }
+    },
+    {
+      title: "天外福气神仙指路 🧙",
+      text: "漫步世界走廊，神明觉得你颇具慧根，立刻赠与你一位神仙贴身附体护法 4 轮！",
+      action: () => {
+        const types = ["wealth", "earth", "wisdom"];
+        const t = types[Math.floor(Math.random() * types.length)];
+        player.god = { type: t, turnsLeft: 4 };
+        if (window.sound && typeof window.sound.playGodArrival === "function") window.sound.playGodArrival();
+        addLog("🧙 命运之手：[" + player.name + "] 随机得到了 [" + getGodName(t) + "] 的随行护法！");
+      }
+    },
+    {
+      title: "交通道路超速违章 🚓",
+      text: "由于你的私人飞车在世界街头超速疾驰，被全网通缉扣押款项：-$1,000！",
+      action: () => {
+        adjustPlayerCash(player, -1000);
+        if (window.sound) window.sound.playMisfortune();
       }
     }
-  });
+  ];
+
+  const selected = events[Math.floor(Math.random() * events.length)];
+  selected.action();
+
+  showEventModal(selected.title, "[" + player.name + "] 命运签纸：\n\n" + selected.text, "🔮");
+  addLog("🎰 命运结果：[" + player.name + "] 抽中卡片 [" + selected.title + "]", "text-purple-400");
+  
+  updatePlayerRanksUI();
+  prepareEndTurn();
 }
 
-// --- 综合看板 UI 控制 ---
-function updateStockTickerUI() {
-  const ticker = document.getElementById("stock-ticker");
-  if (!ticker) return;
-  ticker.innerHTML = "";
-  gameStocks.forEach(s => {
-    const change = s.trend.length >= 2 ? s.price - s.trend[s.trend.length - 2] : 0;
-    const percent = s.trend.length >= 2 ? (change / s.trend[s.trend.length - 2] * 100).toFixed(1) : "0.0";
-    const sign = change >= 0 ? "▲" : "▼";
-    const color = change >= 0 ? "text-emerald-400" : "text-rose-400";
-    
-    const item = document.createElement("span");
-    item.className = `inline-flex items-center gap-1 font-bold ${color}`;
-    item.innerHTML = `${s.name}(${s.symbol}) $${s.price.toFixed(1)} ${sign}${percent}%`;
-    ticker.appendChild(item);
-  });
-}
-
+// 刷新右侧 [1列排布] 卡片
 function updatePlayerRanksUI() {
   const rankContainer = document.getElementById("player-ranks");
   if (!rankContainer) return;
   rankContainer.innerHTML = "";
 
   const sorted = [...players].map(p => {
-    let stockVal = 0;
-    gameStocks.forEach(s => {
-      stockVal += (p.stockHoldings[s.symbol] || 0) * s.price;
-    });
-
-    let propertyVal = 0;
+    let estateVal = 0;
     mapStates.forEach(st => {
       if (st.owner === p.id) {
         const tile = TILE_DEFS[st.id];
-        propertyVal += tile.cost + (st.level * tile.cost * 0.5);
+        estateVal += tile.cost + (st.level * tile.cost * 0.5);
       }
     });
 
-    const netWorth = p.cash + stockVal + propertyVal;
-
-    return { ...p, stockVal, propertyVal, netWorth };
+    const netWorth = p.cash + estateVal;
+    return Object.assign({}, p, { propertyVal: estateVal, netWorth: netWorth });
   }).sort((a, b) => b.netWorth - a.netWorth);
 
   sorted.forEach((p, idx) => {
     const card = document.createElement("div");
-    const opacityClass = p.isBankrupt ? "opacity-35" : "";
-    const turnBorder = (players[currentTurnIndex].id === p.id && !p.isBankrupt) ? "border-2 border-cyan-400 scale-[1.01] shadow-[0_0_15px_rgba(0,240,255,0.15)]" : "border border-slate-800/80";
+    const opacityClass = p.isBankrupt ? "opacity-30" : "";
+    const isCurrent = (players[currentTurnIndex].id === p.id && !p.isBankrupt);
+    const turnBorder = isCurrent ? "border border-cyan-400 shadow-[0_0_15px_rgba(0,255,255,0.15)] bg-slate-900/90 scale-[1.01]" : "border border-slate-850 bg-slate-950/40";
     
-    card.className = `p-4.5 rounded-2xl bg-slate-900/80 ${turnBorder} ${opacityClass} transition-all relative flex flex-col justify-between`;
-    card.innerHTML = `
-      <div class="flex items-center justify-between mb-2">
-        <div class="flex items-center gap-3">
-          <span class="text-3xl filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]">${p.avatar}</span>
-          <div>
-            <div class="font-bold text-sm text-white flex items-center gap-1.5">
-              ${p.name} 
-              ${p.isAI ? `<span class="bg-slate-800 text-slate-400 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">AI</span>` : ""}
-            </div>
-            <div class="text-[10px] text-slate-400 uppercase tracking-widest font-black">总资产: <span class="text-cyan-400 font-extrabold text-xs">$${p.netWorth.toLocaleString()}</span></div>
-          </div>
-        </div>
-        <div class="text-right flex flex-col items-end">
-          <span class="text-xs font-black text-slate-500">第 ${idx + 1} 名</span>
-          ${p.god ? `<span class="bg-indigo-950/80 text-indigo-300 text-[9px] px-2 py-0.5 rounded-full border border-indigo-900/60 flex items-center gap-0.5 animate-pulse font-bold">${getGodName(p.god.type)}: 剩 ${p.god.turnsLeft} 轮</span>` : ""}
-        </div>
-      </div>
+    const aiTag = p.isAI ? '<span class="bg-slate-800 text-slate-400 text-[8px] px-1 rounded font-bold">AI</span>' : "";
+    const godTag = p.god ? ('<span class="text-[9px] text-indigo-300 font-bold">' + getGodName(p.god.type) + ":" + p.god.turnsLeft + "r</span>") : "";
+    const bankruptTag = p.isBankrupt ? '<div class="absolute inset-0 bg-rose-950/80 flex items-center justify-center font-bold text-rose-500 text-xs rounded-xl pointer-events-none select-none">破产</div>' : "";
 
-      <div class="grid grid-cols-3 gap-2 text-[10px] text-slate-500 border-t border-slate-800/60 pt-2.5 mt-2">
-        <div class="bg-slate-950/80 p-2 rounded-xl text-center">💵 现金资产<br><span class="text-slate-200 font-black text-xs">$${p.cash.toLocaleString()}</span></div>
-        <div class="bg-slate-950/80 p-2 rounded-xl text-center">📈 股票市值<br><span class="text-slate-200 font-black text-xs">$${Math.floor(p.stockVal).toLocaleString()}</span></div>
-        <div class="bg-slate-950/80 p-2 rounded-xl text-center">🏘️ 房产估值<br><span class="text-slate-200 font-black text-xs">$${Math.floor(p.propertyVal).toLocaleString()}</span></div>
-      </div>
-
-      ${p.isBankrupt ? `<div class="absolute inset-0 bg-rose-950/90 flex items-center justify-center font-black text-rose-500 text-sm rounded-2xl transform rotate-1 select-none pointer-events-none border border-rose-500 shadow-2xl">BANKRUPT • 破产出局</div>` : ""}
-    `;
+    // 采用 1列横置扁平化卡片，节省高度，字数完全清晰，空间100%利用
+    card.className = "p-2.5 rounded-xl transition-all relative flex flex-col justify-between h-[65px] " + turnBorder + " " + opacityClass;
+    card.innerHTML = '<div class="flex items-center justify-between">' +
+        '<div class="flex items-center gap-1.5">' +
+          '<span id="rank-avatar-' + p.id + '" class="text-xl filter drop-shadow-[0_0_4px_rgba(255,255,255,0.15)]">' + p.avatar + '</span>' +
+          '<div class="leading-none">' +
+            '<span class="font-black text-[10px] text-white flex items-center gap-1">' + p.name.split(" ")[0] + " " + aiTag + '</span>' +
+            '<span class="text-[9px] text-slate-500">#' + (idx + 1) + '</span>' +
+          '</div>' +
+        '</div>' +
+        godTag +
+      '</div>' +
+      '<div class="flex justify-between items-end border-t border-slate-850/60 pt-1 mt-1 text-[9px]">' +
+        '<div>' +
+          '<span class="text-slate-500 block">总身价</span>' +
+          '<span class="text-cyan-400 font-extrabold">$' + p.netWorth.toLocaleString() + '</span>' +
+        '</div>' +
+        '<div class="text-right">' +
+          '<span class="text-slate-500 block">拥有现金</span>' +
+          '<span class="text-slate-200 font-bold">$' + p.cash.toLocaleString() + '</span>' +
+        '</div>' +
+        '<div class="text-right">' +
+          '<span class="text-slate-500 block">城市房产</span>' +
+          '<span class="text-slate-400 font-medium">$' + p.propertyVal.toLocaleString() + '</span>' +
+        '</div>' +
+      '</div>' +
+      bankruptTag;
     rankContainer.appendChild(card);
   });
 }
 
 function getGodName(type) {
-  if (type === "wealth") return "财神";
-  if (type === "misfortune") return "衰神";
+  if (type === "wealth") return "大财神";
   if (type === "earth") return "土地公";
+  if (type === "wisdom") return "智慧神";
   return "";
 }
 
-function openStockMarket() {
-  document.getElementById("stock-modal").classList.remove("hidden");
-  renderStockMarketDetails();
-}
-
-function closeStockMarket() {
-  document.getElementById("stock-modal").classList.add("hidden");
-}
-
-function renderStockMarketDetails() {
-  const activePlayer = players[currentTurnIndex];
-  
-  document.getElementById("stock-user-cash").textContent = `$${activePlayer.cash.toLocaleString()}`;
-
-  const btnContainer = document.getElementById("stock-select-buttons");
-  if (btnContainer) {
-    btnContainer.innerHTML = "";
-    gameStocks.forEach((s, idx) => {
-      const btn = document.createElement("button");
-      const activeClass = (selectedStockIndex === idx) ? "bg-cyan-500 text-slate-900 border-cyan-400" : "bg-slate-800 text-slate-300 border-slate-700/60 hover:bg-slate-750";
-      btn.className = `border py-2 rounded-xl text-xs font-bold transition-all uppercase tracking-widest ${activeClass}`;
-      btn.textContent = s.symbol;
-      btn.onclick = () => {
-        selectedStockIndex = idx;
-        renderStockMarketDetails();
-      };
-      btnContainer.appendChild(btn);
-    });
-  }
-
-  const stock = gameStocks[selectedStockIndex];
-  document.getElementById("stock-detail-name").textContent = `${stock.name} (${stock.symbol})`;
-  document.getElementById("stock-detail-price").textContent = `$${stock.price.toFixed(2)}`;
-  
-  const holdCount = activePlayer.stockHoldings[stock.symbol] || 0;
-  const costBasis = activePlayer.stockCosts[stock.symbol] || 0;
-  const totalCostBasisVal = holdCount * costBasis;
-  const currentTotalVal = holdCount * stock.price;
-  const totalProfit = currentTotalVal - totalCostBasisVal;
-
-  let holdDetailHTML = ``;
-  if (holdCount > 0) {
-    const profitColor = totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400';
-    const profitSign = totalProfit >= 0 ? '+' : '';
-    holdDetailHTML = `
-      <div class="flex flex-col gap-1 text-[11px] font-mono leading-relaxed">
-        <div class="flex justify-between"><span>已持有股份:</span> <span class="font-bold text-white">${holdCount} 股</span></div>
-        <div class="flex justify-between"><span>持仓平均成本:</span> <span class="font-bold text-cyan-400">$${costBasis.toFixed(2)}</span></div>
-        <div class="flex justify-between"><span>浮动估算损益:</span> <span class="font-bold ${profitColor}">${profitSign}$${totalProfit.toFixed(2)}</span></div>
-      </div>
-    `;
-  } else {
-    holdDetailHTML = `<span class="text-slate-500 italic text-[11px]">暂无持仓股份</span>`;
-  }
-  document.getElementById("stock-detail-hold").innerHTML = holdDetailHTML;
-
-  // 触发 stock.js 中的高阶金融图表渲染
-  if (window.stockEngine && typeof window.stockEngine.renderChart === "function") {
-    window.stockEngine.renderChart(stock);
-  }
-
-  // 我的仓位汇总
-  const holdingList = document.getElementById("stock-holding-list");
-  if (holdingList) {
-    holdingList.innerHTML = "";
-    
-    let hasAnyStock = false;
-    gameStocks.forEach(s => {
-      const count = activePlayer.stockHoldings[s.symbol] || 0;
-      const costBasisPrice = activePlayer.stockCosts[s.symbol] || 0;
-      if (count > 0) {
-        hasAnyStock = true;
-        const profit = count * (s.price - costBasisPrice);
-        const profitColor = profit >= 0 ? 'text-emerald-400' : 'text-rose-400';
-        const profitSign = profit >= 0 ? '+' : '';
-        
-        const row = document.createElement("div");
-        row.className = "flex justify-between items-center bg-slate-900 p-2.5 rounded-xl border border-slate-850 text-xs text-slate-300 font-mono";
-        row.innerHTML = `
-          <div class="flex flex-col">
-            <span class="font-bold text-white">${s.name} (${s.symbol})</span>
-            <span class="text-[10px] text-slate-500">持股数: ${count} 股</span>
-          </div>
-          <div class="text-right flex flex-col">
-            <span class="text-cyan-400 font-bold">买入成本: $${costBasisPrice.toFixed(2)}</span>
-            <span class="${profitColor} font-bold text-[10px]">${profitSign}$${Math.floor(profit)} (${((profit / (count * costBasisPrice)) * 100).toFixed(1)}%)</span>
-          </div>
-        `;
-        holdingList.appendChild(row);
-      }
-    });
-
-    if (!hasAnyStock) {
-      holdingList.innerHTML = `<div class="text-slate-500 text-xs italic text-center py-3">暂无任何持仓股份</div>`;
-    }
-  }
-}
-
-function setTradeMax() {
-  const activePlayer = players[currentTurnIndex];
-  const stock = gameStocks[selectedStockIndex];
-  const amountInput = document.getElementById("stock-trade-amount");
-  
-  const maxBuy = Math.floor(activePlayer.cash / stock.price);
-  amountInput.value = maxBuy > 0 ? maxBuy : 1;
-}
-
-function tradeStock(type) {
-  const activePlayer = players[currentTurnIndex];
-  if (activePlayer.isBankrupt) return;
-
-  const stock = gameStocks[selectedStockIndex];
-  const amountInput = document.getElementById("stock-trade-amount");
-  const amount = parseInt(amountInput.value) || 0;
-
-  if (amount <= 0) {
-    alert("请输入有效的交易股数！");
-    return;
-  }
-
-  if (type === "buy") {
-    const cost = Math.floor(amount * stock.price);
-    if (activePlayer.cash >= cost) {
-      const held = activePlayer.stockHoldings[stock.symbol] || 0;
-      const currentCost = activePlayer.stockCosts[stock.symbol] || 0;
-      
-      const totalCostBasis = ((held * currentCost) + (amount * stock.price)) / (held + amount);
-      
-      activePlayer.cash -= cost;
-      activePlayer.stockHoldings[stock.symbol] = held + amount;
-      activePlayer.stockCosts[stock.symbol] = parseFloat(totalCostBasis.toFixed(2));
-
-      addLog(`💱 股市买入：[${activePlayer.name}] 扫货买入 [${stock.name}] ${amount} 股 (成交价:$${stock.price.toFixed(2)}，持仓成本:$${activePlayer.stockCosts[stock.symbol].toFixed(2)})。`, "text-emerald-400");
-      if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
-    } else {
-      alert("可用现金准备金不足，交易指令失败！");
-    }
-  } else {
-    const held = activePlayer.stockHoldings[stock.symbol] || 0;
-    const costBasis = activePlayer.stockCosts[stock.symbol] || 0;
-    if (held >= amount) {
-      const revenue = Math.floor(amount * stock.price);
-      const profit = Math.floor(amount * (stock.price - costBasis));
-      const profitStr = profit >= 0 ? `盈利 +$${profit}` : `亏损 $${Math.abs(profit)}`;
-
-      activePlayer.cash += revenue;
-      activePlayer.stockHoldings[stock.symbol] = held - amount;
-      if (activePlayer.stockHoldings[stock.symbol] === 0) {
-        activePlayer.stockCosts[stock.symbol] = 0; // 重置
-      }
-
-      addLog(`💱 股市卖出：[${activePlayer.name}] 平仓卖出 [${stock.name}] ${amount} 股，套现 $${revenue} (${profitStr})！`, "text-rose-400");
-      if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
-    } else {
-      alert("阁下的持仓份额中并没有足够股数可以抛售！");
-    }
-  }
-
-  renderStockMarketDetails();
-  updatePlayerRanksUI();
-}
-
-// --- 系统日志辅助模块 ---
 function addLog(text, customClass = "text-slate-300") {
   const logs = document.getElementById("game-logs");
   if (!logs) return;
   const item = document.createElement("div");
-  item.className = `p-1.5 border-b border-slate-800/40 leading-relaxed font-mono ${customClass}`;
-  item.textContent = `[第 ${roundCount} 轮] ${text}`;
+  item.className = "p-1 border-b border-slate-800/40 leading-relaxed font-mono " + customClass;
+  item.textContent = "[第 " + roundCount + " 轮] " + text;
   logs.appendChild(item);
   logs.scrollTop = logs.scrollHeight;
 }
@@ -1216,7 +1089,7 @@ function closeEventModal() {
   if (modal) modal.classList.add("hidden");
 }
 
-// --- 自动初始化引导界面 (避免 window.onload 被其他脚本覆盖) ---
+// --- 自动加载器 ---
 function initGameSetup() {
   renderSetupScreen();
 }
