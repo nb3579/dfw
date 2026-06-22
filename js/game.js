@@ -11,7 +11,8 @@ const DOM = {
   show: (id) => { const el = document.getElementById(id); if (el) el.classList.remove('hidden'); },
   hide: (id) => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); },
   addClass: (id, cls) => { const el = document.getElementById(id); if (el) el.classList.add(cls); },
-  removeClass: (id, cls) => { const el = document.getElementById(id); if (el) el.classList.remove(cls); }
+  removeClass: (id, cls) => { const el = document.getElementById(id); if (el) el.classList.remove(cls); },
+  setClass: (id, cls) => { const el = document.getElementById(id); if (el) el.className = cls; } // ✅ 修复 TypeError 报错
 };
 
 // --- 游戏动态运行时状态 ---
@@ -117,7 +118,8 @@ function addLog(text, customClass = "text-slate-300") {
   const logs = document.getElementById("game-logs");
   if (!logs) return;
   const item = document.createElement("div");
-  item.className = "p-1.5 border-b border-slate-800/40 leading-relaxed font-mono " + customClass;
+  // 优化日志单条显示效果，消除局促感
+  item.className = "p-2 mb-1.5 bg-slate-900/50 rounded-lg border border-slate-800/60 leading-relaxed font-mono text-xs shadow-sm " + customClass;
   item.textContent = "[第 " + roundCount + " 轮] " + text;
   logs.appendChild(item);
   logs.scrollTop = logs.scrollHeight;
@@ -135,26 +137,26 @@ function renderSetupScreen() {
   
   PLAYER_TEMPLATES.forEach((tpl, index) => {
     const row = document.createElement("div");
-    row.className = "flex items-center justify-between bg-slate-950/80 p-3 rounded-2xl border border-slate-800/80 shadow-inner";
-    row.innerHTML = `<div class="flex items-center gap-3">
-      <span class="text-3xl">${tpl.avatar}</span>
-      <div>
-        <input type="text" id="setup-name-${index}" value="${tpl.name}" class="bg-slate-900 border border-slate-800 text-white font-bold rounded-lg px-2 py-1 text-xs w-32 focus:outline-none focus:border-cyan-400">
-        <span class="text-[10px] block text-slate-500 mt-1 uppercase tracking-wider">配戴色: ${tpl.name.split(' ')[0]}</span>
+    row.className = "flex flex-col sm:flex-row items-center justify-between bg-slate-900/60 p-4 mb-3 rounded-2xl border border-slate-700/50 shadow-lg gap-4";
+    row.innerHTML = `<div class="flex items-center gap-4 w-full sm:w-auto">
+      <span class="text-4xl drop-shadow-md">${tpl.avatar}</span>
+      <div class="flex-grow">
+        <input type="text" id="setup-name-${index}" value="${tpl.name}" class="bg-slate-950/80 border border-slate-700 text-white font-bold rounded-lg px-3 py-1.5 text-sm w-full focus:outline-none focus:border-cyan-400">
+        <span class="text-xs block text-slate-400 mt-1 uppercase tracking-wider">配戴色: ${tpl.name.split(' ')[0]}</span>
       </div>
     </div>
-    <div class="flex gap-2">
-      <label class="flex items-center gap-1 cursor-pointer">
-        <input type="radio" name="setup-type-${index}" value="human" ${index === 0 ? "checked" : ""} class="accent-cyan-400">
-        <span class="text-[11px] font-bold text-slate-300">玩家</span>
+    <div class="flex gap-3 w-full sm:w-auto bg-slate-950/50 p-2 rounded-xl justify-center">
+      <label class="flex items-center gap-1.5 cursor-pointer">
+        <input type="radio" name="setup-type-${index}" value="human" ${index === 0 ? "checked" : ""} class="accent-cyan-400 w-4 h-4">
+        <span class="text-xs font-bold text-slate-300">玩家</span>
       </label>
-      <label class="flex items-center gap-1 cursor-pointer">
-        <input type="radio" name="setup-type-${index}" value="ai" ${index > 0 ? "checked" : ""} class="accent-cyan-400">
-        <span class="text-[11px] font-bold text-slate-400">AI</span>
+      <label class="flex items-center gap-1.5 cursor-pointer">
+        <input type="radio" name="setup-type-${index}" value="ai" ${index > 0 ? "checked" : ""} class="accent-cyan-400 w-4 h-4">
+        <span class="text-xs font-bold text-slate-400">AI</span>
       </label>
-      <label class="flex items-center gap-1 cursor-pointer">
-        <input type="radio" name="setup-type-${index}" value="none" class="accent-cyan-400">
-        <span class="text-[11px] font-bold text-slate-500">不参战</span>
+      <label class="flex items-center gap-1.5 cursor-pointer">
+        <input type="radio" name="setup-type-${index}" value="none" class="accent-cyan-400 w-4 h-4">
+        <span class="text-xs font-bold text-slate-500">不参战</span>
       </label>
     </div>`;
     listContainer.appendChild(row);
@@ -208,7 +210,7 @@ function startGame() {
 
   currentTurnIndex = 0;
   roundCount = 1;
-  addLog("🎬 40格环形世界城市地图拼接完毕！全球商战正式开战！", "text-cyan-400 font-bold");
+  addLog("🎬 40格环形世界城市地图拼接完毕！全球商战正式开战！", "text-cyan-400 font-bold text-sm");
   
   startPlayerTurn();
 }
@@ -242,7 +244,7 @@ function renderBoard() {
         </span>
         <div id="tile-owner-indicator-${tile.id}" class="absolute bottom-0 text-[8px] md:text-[9px] font-black px-1 rounded shadow-lg"></div>
       </div>
-      <div class="text-[8px] md:text-[9px] text-slate-500 text-center font-bold tracking-tight truncate" id="tile-footer-${tile.id}">${subText}</div>
+      <div class="text-[8px] md:text-[10px] text-slate-400 text-center font-bold tracking-tight truncate" id="tile-footer-${tile.id}">${subText}</div>
       <div id="tile-players-holder-${tile.id}" class="absolute inset-x-0 bottom-0.5 flex justify-center gap-0.5 flex-wrap z-10 pointer-events-none px-1"></div>`;
     container.appendChild(tileDiv);
   });
@@ -319,7 +321,7 @@ function showFloatingMoney(playerId, amount) {
 
 function createFloatingNode(x, y, amount) {
   const floatDiv = document.createElement("div");
-  floatDiv.className = "floating-money-node " + (amount >= 0 ? "money-gain" : "money-loss");
+  floatDiv.className = "floating-money-node " + (amount >= 0 ? "money-gain text-emerald-400" : "money-loss text-rose-500");
   floatDiv.textContent = (amount >= 0 ? "+" : "") + "$" + Math.abs(amount).toLocaleString();
   floatDiv.style.left = x + "px";
   floatDiv.style.top = y + "px";
@@ -898,24 +900,26 @@ function updatePlayerRanksUI() {
     const card = document.createElement("div");
     const opacityClass = p.isBankrupt ? "opacity-30" : "";
     const isCurrent = (players[currentTurnIndex].id === p.id && !p.isBankrupt);
-    const turnBorder = isCurrent ? "border border-cyan-400 shadow-[0_0_15px_rgba(0,255,255,0.15)] bg-slate-900/90 scale-[1.01]" : "border border-slate-850 bg-slate-950/40";
+    const turnBorder = isCurrent ? "border border-cyan-400 shadow-[0_0_15px_rgba(0,255,255,0.15)] bg-slate-900/90 scale-[1.01]" : "border border-slate-800/80 bg-slate-900/50";
     
-    const aiTag = p.isAI ? `<span class="bg-slate-800 text-slate-400 text-[8px] px-1 rounded font-bold">AI</span>` : "";
-    const godTag = p.god ? `<span class="text-[9px] text-indigo-300 font-bold ml-1">${getGodName(p.god.type)}:${p.god.turnsLeft}回</span>` : "";
-    const bankruptTag = p.isBankrupt ? `<div class="absolute inset-0 bg-rose-950/80 flex items-center justify-center font-bold text-rose-500 text-xs rounded-xl pointer-events-none select-none">破产出局</div>` : "";
+    const aiTag = p.isAI ? `<span class="bg-slate-700 text-slate-300 text-[10px] px-1.5 rounded font-bold ml-1">AI</span>` : "";
+    const godTag = p.god ? `<span class="text-[10px] text-indigo-300 font-bold block mt-1">${getGodName(p.god.type)} : 剩余 ${p.god.turnsLeft} 轮</span>` : "";
+    const bankruptTag = p.isBankrupt ? `<div class="absolute inset-0 bg-rose-950/80 flex items-center justify-center font-bold text-rose-500 text-sm rounded-xl pointer-events-none select-none">破产出局</div>` : "";
 
-    card.className = `p-3 rounded-xl transition-all relative flex items-center justify-between h-[65px] ${turnBorder} ${opacityClass}`;
-    card.innerHTML = `<div class="flex items-center gap-2.5">
-        <span id="rank-avatar-${p.id}" class="text-2xl filter drop-shadow-[0_0_4px_rgba(255,255,255,0.15)]">${p.avatar}</span>
-        <div class="leading-none">
-          <span class="font-black text-xs text-white flex items-center gap-1 truncate max-w-[90px]">${p.name.split(" ")[0]} ${aiTag}</span>
-          <span class="text-[9px] text-slate-500 block mt-1">排名 #${idx + 1}${godTag}</span>
+    // 优化拉伸效果：使用 flex-1 让卡片平铺占据左边所有空间，同时加高 padding
+    card.className = `p-4 rounded-xl transition-all relative flex flex-col justify-center flex-1 ${turnBorder} ${opacityClass}`;
+    card.innerHTML = `<div class="flex items-center gap-4 mb-3">
+        <span id="rank-avatar-${p.id}" class="text-4xl filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]">${p.avatar}</span>
+        <div class="leading-tight">
+          <span class="font-black text-base text-white flex items-center">${p.name.split(" ")[0]} ${aiTag}</span>
+          <span class="text-[11px] text-slate-400 block mt-1">排名 #${idx + 1}</span>
+          ${godTag}
         </div>
       </div>
-      <div class="text-right text-[10px] space-y-0.5 leading-tight font-mono shrink-0 border-l border-slate-800/80 pl-3">
-        <div><span class="text-slate-500">身价:</span> <span class="text-cyan-400 font-black">$${p.netWorth.toLocaleString()}</span></div>
-        <div><span class="text-slate-500">现金:</span> <span class="text-emerald-400 font-bold">$${p.cash.toLocaleString()}</span></div>
-        <div><span class="text-slate-500">房产:</span> <span class="text-slate-300 font-medium">$${p.propertyVal.toLocaleString()}</span></div>
+      <div class="flex flex-col gap-1.5 text-xs bg-slate-950/40 p-2.5 rounded-lg border border-slate-800/60">
+        <div class="flex justify-between"><span class="text-slate-500">身价:</span> <span class="text-cyan-400 font-black">$${p.netWorth.toLocaleString()}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">现金:</span> <span class="text-emerald-400 font-bold">$${p.cash.toLocaleString()}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">房产:</span> <span class="text-slate-300 font-medium">$${p.propertyVal.toLocaleString()}</span></div>
       </div>
       ${bankruptTag}`;
       
