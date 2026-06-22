@@ -7,6 +7,11 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    /* 隐藏所有滚动条，保持游戏全屏沉浸感 */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
 </head>
 <body class="text-gray-100 bg-slate-950 p-2 md:p-4 font-sans antialiased min-h-screen flex flex-col justify-center items-center overflow-hidden">
 
@@ -53,60 +58,64 @@
     <!-- 2. 核心大游戏主战场界面 -->
     <div id="game-screen" class="hidden w-full flex items-center justify-center overflow-hidden">
       
-      <!-- 采用 16列 x 9行 完美比例，并使用 tailwind 的任意值语法 [] 确保 CDN 能够正确解析栅格！ -->
-      <div id="board-container" class="grid grid-cols-[16] grid-rows-[9] gap-0.5 sm:gap-1 p-1 bg-slate-950 border border-slate-900 rounded-[1.25rem] relative w-full aspect-video max-h-[96vh] shadow-2xl">
+      <!-- 采用 16列 x 9行 完美比例，使用底层 inline-style 彻底锁死物理网格，防范 Tailwind 解析失效 -->
+      <div id="board-container" class="grid gap-0.5 sm:gap-1 p-1 bg-slate-950 border border-slate-900 rounded-[1.25rem] relative w-full aspect-video max-h-[96vh] shadow-2xl"
+           style="grid-template-columns: repeat(16, minmax(0, 1fr)); grid-template-rows: repeat(9, minmax(0, 1fr));">
         
         <!-- ==========================================
-             中央指挥大厅：完美贴合内圈 14x7，无黑边，重构为 grid-cols-12 防止溢出
+             中央指挥大厅：物理锁死坐标 (跨列 2~15，跨行 2~8)，绝对不与右侧城市重叠！
              ========================================== -->
-        <div class="col-start-2 col-end-[16] row-start-2 row-end-[9] bg-slate-900/90 border border-slate-850 rounded-xl p-2 sm:p-4 grid grid-cols-12 gap-3 sm:gap-4 overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.6)] z-0 relative">
+        <div class="bg-slate-900/90 border border-slate-850 rounded-xl p-3 sm:p-5 grid grid-cols-12 gap-3 sm:gap-5 overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.6)] z-0 relative"
+             style="grid-column: 2 / 16; grid-row: 2 / 9;">
           
           <!-- 大厅左侧：排行榜 (占据 4 列，约 33% 宽度，纵向填满) -->
-          <div class="col-span-4 flex flex-col h-full bg-slate-950/60 p-3 sm:p-3.5 border border-slate-800/80 rounded-xl overflow-hidden shadow-inner">
-            <div class="text-xs lg:text-sm font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-800/80 pb-2 flex justify-between shrink-0">
+          <div class="col-span-4 flex flex-col h-full bg-slate-950/60 p-3.5 border border-slate-800/80 rounded-xl overflow-hidden shadow-inner">
+            <div class="text-xs lg:text-sm font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-800/80 pb-3 flex justify-between shrink-0">
               <span>🏆 财阀资产排行榜</span>
               <span class="text-emerald-400 animate-pulse text-[10px]">复利运转中</span>
             </div>
-            <div id="player-ranks" class="flex-grow flex flex-col gap-2 overflow-y-auto no-scrollbar">
-              <!-- 排行榜卡片 -->
+            <!-- 排行榜卡片列表 (利用 flex-grow 无限延伸填补底部黑边) -->
+            <div id="player-ranks" class="flex-grow flex flex-col gap-2.5 overflow-y-auto no-scrollbar">
+              <!-- JS 动态注入 -->
             </div>
           </div>
 
           <!-- 大厅右侧：行动中枢 + 战局日志 (占据 8 列，约 66% 宽度) -->
-          <div class="col-span-8 flex flex-col h-full gap-3 sm:gap-4">
+          <div class="col-span-8 flex flex-col h-full gap-3 sm:gap-5">
             
-            <!-- 🎲 掷骰行动面板 -->
-            <div class="bg-slate-900 border border-slate-800 p-3 sm:p-4 rounded-xl flex items-center justify-between shadow-lg shrink-0 h-[80px] lg:h-[100px]">
+            <!-- 🎲 掷骰行动面板 (高度压缩，留空间给日志) -->
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between shadow-lg shrink-0">
               
-              <div class="flex items-center gap-3 sm:gap-4 shrink-0 pl-2">
-                <div id="current-player-avatar" class="text-3xl lg:text-5xl filter drop-shadow">👧</div>
+              <div class="flex items-center gap-3 lg:gap-4 shrink-0 pl-2">
+                <div id="current-player-avatar" class="text-4xl lg:text-5xl filter drop-shadow">👧</div>
                 <div>
-                  <span class="text-[9px] sm:text-[10px] text-slate-500 uppercase font-black block tracking-widest">当前行动方</span>
+                  <span class="text-[10px] text-slate-500 uppercase font-black block tracking-widest">当前行动方</span>
                   <span id="current-player-name" class="text-sm lg:text-lg font-black text-white block mt-0.5">加载中...</span>
                 </div>
               </div>
 
               <!-- 骰子与操作按钮 -->
-              <div class="flex items-center gap-3 sm:gap-4 pr-2">
-                <div id="dice-element" class="w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-700 text-white text-2xl lg:text-4xl font-black rounded-xl flex items-center justify-center shadow-lg select-none cursor-pointer">🎲</div>
-                <div class="flex flex-col gap-1.5 sm:gap-2 w-24 sm:w-28 lg:w-32">
-                  <button id="btn-roll" onclick="triggerDiceRoll()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-[10px] sm:text-[11px] lg:text-xs px-2 py-1.5 sm:py-2 rounded-lg transition-all shadow-md">
+              <div class="flex items-center gap-3 lg:gap-4 pr-2">
+                <div id="dice-element" class="w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-700 text-white text-2xl lg:text-3xl font-black rounded-xl flex items-center justify-center shadow-lg select-none cursor-pointer">🎲</div>
+                <div class="flex flex-col gap-1.5 lg:gap-2 w-28 lg:w-32">
+                  <button id="btn-roll" onclick="triggerDiceRoll()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-[11px] lg:text-xs px-2 py-1.5 lg:py-2.5 rounded-lg transition-all shadow-md">
                     🎲 开始掷骰
                   </button>
-                  <button id="btn-end-turn" onclick="endTurn()" disabled class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 font-black text-[10px] sm:text-[11px] lg:text-xs px-2 py-1.5 sm:py-2 rounded-lg transition-all">
+                  <button id="btn-end-turn" onclick="endTurn()" disabled class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 font-black text-[11px] lg:text-xs px-2 py-1.5 lg:py-2.5 rounded-lg transition-all">
                     ⏭ 结束回合
                   </button>
                 </div>
               </div>
             </div>
 
-            <!-- 📜 战局实时日志 (自动向下填满剩余空间) -->
-            <div class="bg-slate-950/80 border border-slate-850 p-3 sm:p-4 rounded-xl flex flex-col flex-grow min-h-0 shadow-xl">
-              <div class="text-[10px] sm:text-xs font-black text-slate-500 uppercase mb-2 sm:mb-3 flex justify-between items-center border-b border-slate-850 pb-2 shrink-0">
+            <!-- 📜 战局实时日志 (flex-grow 自动向下填满所有剩余空间) -->
+            <div class="bg-slate-950/80 border border-slate-850 p-4 rounded-xl flex flex-col flex-grow min-h-0 shadow-xl">
+              <div class="text-[10px] lg:text-xs font-black text-slate-500 uppercase mb-3 flex justify-between items-center border-b border-slate-850 pb-3 shrink-0">
                 <span id="quick-tip" class="text-cyan-400">系统：准备掷骰</span>
-                <button onclick="clearLogs()" class="hover:text-white text-slate-400 text-[9px] sm:text-[10px] bg-slate-800 px-2 sm:px-3 py-1 rounded transition-all">清空记录</button>
+                <button onclick="clearLogs()" class="hover:text-white text-slate-400 text-[9px] lg:text-[10px] bg-slate-800 px-3 py-1.5 rounded transition-all">清空记录</button>
               </div>
-              <div id="game-logs" class="flex-grow overflow-y-auto text-[10px] sm:text-xs space-y-1.5 text-slate-400 no-scrollbar pr-2"></div>
+              <!-- 这里加了 pr-2 防止文字太贴右边，并且通过 no-scrollbar 隐藏滚动条 -->
+              <div id="game-logs" class="flex-grow overflow-y-auto text-[10px] lg:text-[11px] space-y-1.5 text-slate-400 no-scrollbar pr-2"></div>
             </div>
 
           </div>
