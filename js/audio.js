@@ -1,5 +1,5 @@
 /* =======================================================
-   大富翁4：全球股市与神仙霸战 Web Audio API 音效引擎
+   大富翁4 Web Audio API 原生音效合成算法引擎
    ======================================================= */
 
 class AudioController {
@@ -7,14 +7,13 @@ class AudioController {
     this.ctx = null;
   }
 
-  // 初始化音频上下文（必须由玩家交互如点击事件触发）
   init() {
     if (!this.ctx) {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     }
   }
 
-  // 1. 金币清脆音效
+  // 1. 金币清脆声 (金币落袋)
   playCoin() {
     this.init();
     if (!this.ctx) return;
@@ -23,8 +22,8 @@ class AudioController {
     const gain = this.ctx.createGain();
     
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, now); // A5 note
-    osc.frequency.exponentialRampToValueAtTime(1320, now + 0.1); // E6 note
+    osc.frequency.setValueAtTime(880, now);
+    osc.frequency.exponentialRampToValueAtTime(1320, now + 0.1);
     
     gain.gain.setValueAtTime(0.15, now);
     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
@@ -36,7 +35,7 @@ class AudioController {
     osc.stop(now + 0.3);
   }
 
-  // 2. 掷骰子沙沙振动声
+  // 2. 掷骰子振动声
   playDice() {
     this.init();
     if (!this.ctx) return;
@@ -45,7 +44,6 @@ class AudioController {
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const data = buffer.getChannelData(0);
     
-    // 生成高斯分布噪声
     for (let i = 0; i < bufferSize; i++) {
       data[i] = Math.random() * 2 - 1;
     }
@@ -68,12 +66,12 @@ class AudioController {
     noise.start(now);
   }
 
-  // 3. 神仙降临祥瑞和弦声
+  // 3. 神明降临祥和和弦声
   playGodArrival() {
     this.init();
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
-    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 完美和弦
+    const notes = [523.25, 659.25, 783.99, 1046.50];
     
     notes.forEach((freq, idx) => {
       const osc = this.ctx.createOscillator();
@@ -93,7 +91,7 @@ class AudioController {
     });
   }
 
-  // 4. 商业危机悲怆下跌音效
+  // 4. 商业损失下坠哀鸣声
   playMisfortune() {
     this.init();
     if (!this.ctx) return;
@@ -102,8 +100,8 @@ class AudioController {
     const gain = this.ctx.createGain();
     
     osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(293.66, now); // D4
-    osc.frequency.linearRampToValueAtTime(146.83, now + 0.55); // D3 下坠
+    osc.frequency.setValueAtTime(293.66, now);
+    osc.frequency.linearRampToValueAtTime(146.83, now + 0.55);
     
     gain.gain.setValueAtTime(0.08, now);
     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
@@ -114,7 +112,26 @@ class AudioController {
     osc.start(now);
     osc.stop(now + 0.55);
   }
+
+  // 5. 喜气洋洋大彩中奖和弦声 (新增)
+  playJackpot() {
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const notes = [523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 987.77, 1046.50];
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+      gain.gain.setValueAtTime(0.08, now + idx * 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.05 + 0.3);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now + idx * 0.05);
+      osc.stop(now + idx * 0.05 + 0.3);
+    });
+  }
 }
 
-// 实例化全局音频控制器
 window.sound = new AudioController();
