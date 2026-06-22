@@ -85,7 +85,7 @@
         <div class="font-bold text-emerald-400 mb-1 text-sm">⚖️ 资本硬核法则：</div>
         <div>1. 城市地价分为四档: <span class="text-white font-bold">$3500, $3000, $2500, $2000</span>。</div>
         <div>2. 基础过路费始终维持为当前地价的 <span class="text-white font-bold">10%</span>。每次升级费用等于当前过路费。升级无上限！</div>
-        <div>3. <span class="text-rose-400 font-bold">恶意收购</span>：支付高达当前过路费 <span class="text-white font-bold">10倍</span> 的现金，可强行从对手手中夺走城市产权！</div>
+        <div>3. <span class="text-rose-400 font-bold">恶意收购</span>：支付高达当前过路费 <span class="text-white font-bold">20倍</span> 的现金（即总地价的 2倍），可强行从对手手中夺走城市产权！</div>
         <div>4. <span class="text-amber-400 font-bold">现金理财</span>：回合开始时，自动获取<span class="text-white font-bold">流转现金 0.5%</span>的无风险利息。</div>
       </div>
 
@@ -683,8 +683,8 @@
         addLog(`💰 [${renter.name}] 支付了过路费给 [${owner.name}]！`, "text-emerald-400");
         if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
 
-        // 强购机制判定：如果付完租金后，剩余现金足以支付 10倍 的租金，触发强购契约！
-        const takeoverPrice = finalRent * 10;
+        // 强购机制判定：如果付完租金后，剩余现金足以支付 20倍 的租金，触发强购契约！
+        const takeoverPrice = finalRent * 20;
         if (renter.cash >= takeoverPrice) {
           promptPropertyModal(TILE_DEFS[tileId], mapStates[tileId], "takeover", { ownerId, takeoverPrice });
         } else {
@@ -778,7 +778,7 @@
         DOM.setText("prop-confirm-btn", "动工加建");
       } else if (actionType === "takeover") {
         DOM.setText("prop-title", `强制收购：${tile.name}`);
-        DOM.setText("prop-desc", "这块地段简直是流油的肥肉！支付 10 倍当前过路费即可强行夺取控制权！");
+        DOM.setText("prop-desc", "这块地段简直是流油的肥肉！支付 20倍 当前过路费（即总地价的 2倍）即可强行夺取控制权！");
         DOM.setText("modal-label-1", "当前地价 / 等级"); DOM.setText("prop-val-1", `$${state.currentValue.toLocaleString()} (Lv.${state.level})`);
         DOM.setText("modal-label-2", "强行吞并所需资金"); DOM.setText("prop-val-2", `$${extra.takeoverPrice.toLocaleString()}`);
         DOM.setText("modal-label-3", "接管后过路费"); DOM.setText("prop-val-3", `$${Math.floor(state.currentValue * 0.1).toLocaleString()}`);
