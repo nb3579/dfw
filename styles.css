@@ -1,93 +1,99 @@
 /* =======================================================
-大富翁4：全球股市与神仙霸战 全局暗黑美学样式表
+大富翁4：全球城市大地图 全局样式与 26x26 棋盘布局控制
 ======================================================= */
 
-:root {
---neon-pink: #ff007f;
---neon-blue: #00f0ff;
---neon-green: #39ff14;
---neon-amber: #ffaa00;
-}
-
 body {
-font-family: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif;
-background: radial-gradient(circle at 50% 50%, #151821 0%, #0b0c10 100%);
-overflow-x: hidden;
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft YaHei", sans-serif;
+background-color: #0b0c10;
+-webkit-font-smoothing: antialiased;
 }
 
-/* 霓虹发光边框，完美定位物主 */
-.neon-border-pink { border: 2px solid var(--neon-pink); box-shadow: 0 0 15px rgba(255, 0, 127, 0.4); }
-.neon-border-blue { border: 2px solid var(--neon-blue); box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); }
-.neon-border-green { border: 2px solid var(--neon-green); box-shadow: 0 0 15px rgba(57, 255, 20, 0.4); }
-.neon-border-amber { border: 2px solid var(--neon-amber); box-shadow: 0 0 15px rgba(255, 170, 0, 0.4); }
-
-/* 高清磨砂玻璃质感 */
-.glass-panel {
-background: rgba(30, 41, 59, 0.45);
-backdrop-filter: blur(16px);
--webkit-backdrop-filter: blur(16px);
-border: 1px solid rgba(255, 255, 255, 0.08);
+/* 26x26 Grid 大棋盘样式 */
+.grid-cols-26 {
+grid-template-columns: repeat(26, minmax(0, 1fr));
+}
+.grid-rows-26 {
+grid-template-rows: repeat(26, minmax(0, 1fr));
 }
 
-.glass-panel-heavy {
-background: rgba(15, 23, 42, 0.85);
-backdrop-filter: blur(24px);
-border: 1px solid rgba(255, 255, 255, 0.12);
+.col-start-2 { grid-column-start: 2; }
+.col-end-26 { grid-column-end: 26; }
+.row-start-2 { grid-row-start: 2; }
+.row-end-26 { grid-row-end: 26; }
+
+/* 炫彩物主高发光霓虹边框 */
+.neon-border-pink {
+border: 3px solid #ec4899 !important;
+box-shadow: 0 0 15px rgba(236, 72, 153, 0.45) !important;
 }
 
-.game-title {
-font-family: 'Orbitron', 'Noto Sans SC', sans-serif;
-text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+.neon-border-blue {
+border: 3px solid #3b82f6 !important;
+box-shadow: 0 0 15px rgba(59, 130, 246, 0.45) !important;
 }
 
-/* 3D棋盘平滑悬浮过渡 */
-.board-tile {
-transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-.board-tile:hover {
-transform: translateY(-5px);
-z-index: 40;
+.neon-border-green {
+border: 3px solid #22c55e !important;
+box-shadow: 0 0 15px rgba(34, 197, 94, 0.45) !important;
 }
 
-/* 骰子滚动 3D 悬浮物理模拟 */
-@keyframes physics-roll {
-0% { transform: translateY(0) rotateX(0deg) rotateY(0deg) scale(1); }
-15% { transform: translateY(-30px) rotateX(180deg) rotateY(90deg) scale(1.15); }
-45% { transform: translateY(-45px) rotateX(360deg) rotateY(270deg) scale(1.2); }
-75% { transform: translateY(-15px) rotateX(540deg) rotateY(450deg) scale(1.05); }
-100% { transform: translateY(0) rotateX(720deg) rotateY(720deg) scale(1); }
+.neon-border-amber {
+border: 3px solid #f59e0b !important;
+box-shadow: 0 0 15px rgba(245, 158, 11, 0.45) !important;
+}
+
+/* 骰子动画 */
+@keyframes diceRoll {
+0% { transform: rotate(0deg) scale(1); }
+30% { transform: rotate(140deg) scale(1.2); }
+70% { transform: rotate(-140deg) scale(0.9); }
+100% { transform: rotate(360deg) scale(1); }
 }
 
 .dice-rolling {
-animation: physics-roll 0.75s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+animation: diceRoll 0.5s ease-out infinite;
 }
 
-/* 跑马灯滚动快报 */
-.ticker-wrap {
-overflow: hidden;
+/* 隐藏滚动条 */
+.no-scrollbar::-webkit-scrollbar {
+display: none;
+}
+.no-scrollbar {
+-ms-overflow-style: none;
+scrollbar-width: none;
 }
 
-@keyframes marquee {
-0% { transform: translateX(100%); }
-100% { transform: translateX(-100%); }
+/* =======================================================
+💸 弹跳现金粒子飘动动画气泡 (完美适配 26x26 物理定位)
+======================================================= */
+@keyframes floatUp {
+0% {
+transform: translate(-50%, 0) scale(0.7);
+opacity: 0;
+}
+15% {
+transform: translate(-50%, -24px) scale(1.35);
+opacity: 1;
+}
+80% {
+transform: translate(-50%, -40px) scale(1.1);
+opacity: 0.95;
+}
+100% {
+transform: translate(-50%, -64px) scale(0.8);
+opacity: 0;
+}
 }
 
-.animate-marquee {
-animation: marquee 25s linear infinite;
-}
-
-/* 极致丝滑滚动条 */
-::-webkit-scrollbar {
-width: 6px;
-height: 6px;
-}
-::-webkit-scrollbar-track {
-background: rgba(15, 23, 42, 0.5);
-}
-::-webkit-scrollbar-thumb {
-background: rgba(255, 255, 255, 0.15);
-border-radius: 99px;
-}
-::-webkit-scrollbar-thumb:hover {
-background: rgba(255, 255, 255, 0.3);
+.floating-money-node {
+position: absolute;
+font-weight: 900;
+font-size: 18px;
+animation: floatUp 1.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+pointer-events: none;
+z-index: 9999;
+font-family: "Impact", "Arial Black", sans-serif;
+text-shadow:
+0 2px 5px rgba(0, 0, 0, 0.95),
+0 0 10px rgba(0, 0, 0, 0.6);
 }
