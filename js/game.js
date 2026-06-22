@@ -65,6 +65,7 @@ const STOCKS_DEFS = [
 // --- 初始引导界面生成 ---
 function renderSetupScreen() {
   const listContainer = document.getElementById("player-setup-list");
+  if (!listContainer) return;
   listContainer.innerHTML = "";
   
   PLAYER_TEMPLATES.forEach((tpl, index) => {
@@ -99,15 +100,25 @@ function renderSetupScreen() {
 
 // --- 游戏启动主引擎 ---
 function startGame() {
-  window.sound.init();
+  if (window.sound && typeof window.sound.init === "function") {
+    window.sound.init();
+  }
   
-  const initCash = parseInt(document.getElementById("init-cash").value) || 20000;
-  passStartBonus = parseInt(document.getElementById("start-bonus").value) || 3000;
+  const initCashEl = document.getElementById("init-cash");
+  const startBonusEl = document.getElementById("start-bonus");
+  const initCash = initCashEl ? (parseInt(initCashEl.value) || 20000) : 20000;
+  passStartBonus = startBonusEl ? (parseInt(startBonusEl.value) || 3000) : 3000;
 
   players = [];
   PLAYER_TEMPLATES.forEach((tpl, index) => {
-    const nameVal = document.getElementById(`setup-name-${index}`).value;
-    const typeVal = document.querySelector(`input[name="setup-type-${index}"]:checked`).value;
+    const nameInput = document.getElementById(`setup-name-${index}`);
+    const typeInput = document.querySelector(`input[name="setup-type-${index}"]:checked`);
+    
+    // 防御性保护：如果元素还未加载成功，则安全跳过，防止控制台崩溃
+    if (!nameInput || !typeInput) return;
+
+    const nameVal = nameInput.value;
+    const typeVal = typeInput.value;
     
     if (typeVal !== "none") {
       players.push({
@@ -130,7 +141,7 @@ function startGame() {
   });
 
   if (players.length < 2) {
-    alert("必须保留最少2名角色，才能正常进行对决！");
+    alert("必须保留最少2名角色，且设置已正确渲染，才能正常进行对决！");
     return;
   }
 
@@ -166,6 +177,7 @@ function startGame() {
 // --- 棋盘沙盒格子完全绘制 ---
 function renderBoard() {
   const container = document.getElementById("board-container");
+  if (!container) return;
   const existingTiles = container.querySelectorAll('.board-tile');
   existingTiles.forEach(el => el.remove());
 
@@ -357,12 +369,12 @@ function triggerGodBuffStartOfTurn(player) {
     const bonus = Math.floor(Math.random() * 400) + 200;
     player.cash += bonus;
     addLog(`💰 财神眷顾！[${player.name}] 获得神降红包：+$${bonus}！`, "text-yellow-400 font-bold");
-    window.sound.playCoin();
+    if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
   } else if (player.god.type === "misfortune") {
     const loss = Math.floor(Math.random() * 300) + 150;
     player.cash = Math.max(0, player.cash - loss);
     addLog(`💸 衰神降头！[${player.name}] 财务遭遇无端损失：-$${loss}。`, "text-purple-400");
-    window.sound.playMisfortune();
+    if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
   }
 }
 
@@ -376,7 +388,7 @@ function triggerDiceRoll() {
 
   const diceEl = document.getElementById("dice-element");
   diceEl.classList.add("dice-rolling");
-  window.sound.playDice();
+  if (window.sound && typeof window.sound.playDice === "function") window.sound.playDice();
 
   let diceValue = 1;
   let counter = 0;
@@ -409,7 +421,7 @@ function movePlayerStepByStep(player, steps) {
     if (player.position === 0 && currentStep < steps - 1) {
       player.cash += passStartBonus;
       addLog(`🏪 [${player.name}] 疾步路过起点，财务奖励下发：+$${passStartBonus}！`, "text-emerald-400 font-bold");
-      window.sound.playCoin();
+      if (window.sound) window.sound.playCoin();
     }
 
     updatePlayerPositionsUI();
@@ -434,7 +446,7 @@ function evaluateLandingTile(player, tileId) {
     const reason = tile.type === "HOSPITAL" ? "需要静养 2 回合 🏥。" : "面壁思过 2 回合 🚓。";
     showEventModal("🚨 环境限行", `[${player.name}] 误入 ${tile.name}，${reason}`, "🚨");
     addLog(`🚨 [${player.name}] 触发禁足规定，本轮进入 [${tile.name}] 格子暂停 2 轮。`, "text-rose-400");
-    window.sound.playMisfortune();
+    if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
     prepareEndTurn();
     return;
   }
@@ -442,7 +454,7 @@ function evaluateLandingTile(player, tileId) {
   if (tile.type === "START") {
     player.cash += passStartBonus;
     addLog(`🏪 [${player.name}] 精确踩中起点格子，财务双倍发红利：+$${passStartBonus}！`, "text-emerald-400 font-bold");
-    window.sound.playCoin();
+    if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
     prepareEndTurn();
     return;
   }
@@ -470,9 +482,9 @@ function evaluateLandingTile(player, tileId) {
       if (player.god?.type === "earth") {
         state.owner = player.id;
         state.level = 1;
-        addLog(`🧙 土地公神功大发！免费帮 [${player.name}] 强占了地产空地 [${tile.name}]！`, "text-green-400 font-bold");
+        addLog(`🧙 土地公作法！直接帮 [${player.name}] 免费占领了空地 [${tile.name}]！`, "text-green-400 font-bold");
         updatePropertiesUI();
-        window.sound.playCoin();
+        if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
         prepareEndTurn();
       } else {
         promptPropertyModal(tile, state, "buy");
@@ -483,7 +495,7 @@ function evaluateLandingTile(player, tileId) {
           state.level++;
           addLog(`🧙 土地公吹气！免费将 [${player.name}] 的房产 [${tile.name}] 级别拔高至 Lv.${state.level}！`, "text-green-400 font-bold");
           updatePropertiesUI();
-          window.sound.playCoin();
+          if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
         } else {
           addLog(`🏰 [${player.name}] 名下的 [${tile.name}] 已经达到了顶级城堡！`, "text-yellow-400");
         }
@@ -546,7 +558,7 @@ function collectRentLogic(renter, ownerId, tileId) {
     renter.cash -= finalRent;
     owner.cash += finalRent;
     addLog(`💰 [${renter.name}] 全额支付过路租金，$${finalRent} 计入 [${owner.name}] 的可用现金。`, "text-slate-400");
-    window.sound.playCoin();
+    if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
     prepareEndTurn();
   } else {
     triggerLiquidationToPay(renter, owner, finalRent);
@@ -612,7 +624,7 @@ function triggerLiquidationToPay(renter, creditor, debt) {
 function declareBankruptcy(player, creditor) {
   player.isBankrupt = true;
   addLog(`💀 商业破产：[${player.name}] 资产彻底清算后无力偿还债务，宣告破产出局！`, "text-rose-600 font-black text-sm");
-  window.sound.playMisfortune();
+  if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
 
   if (player.cash > 0 && creditor) {
     creditor.cash += player.cash;
@@ -671,7 +683,7 @@ function promptPropertyModal(tile, state, actionType) {
     confirmBtn.textContent = "立即购入";
   } else {
     title.textContent = `加盖扩建：${tile.name}`;
-    desc.textContent = "加盖多层商业中心或摩天大楼，成倍提升路过税收！";
+    desc.textContent = "加盖多层商业中心 or 摩天大楼，成倍提升路过税收！";
     const buildCost = Math.floor(tile.cost * 0.5);
     costEl.textContent = `$${buildCost}`;
     levelEl.textContent = `当前等级: Lv.${state.level}`;
@@ -715,7 +727,7 @@ function confirmPropertyAction(agree) {
         state.level++;
         addLog(`🏢 地产加盖：[${player.name}] 砸下工程款 $${requiredCash}，将 [${tile.name}] 扩建至 Lv.${state.level} 商业城！`, "text-cyan-400");
       }
-      window.sound.playCoin();
+      if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
       updatePropertiesUI();
     } else {
       addLog(`❌ 财务阻碍：[${player.name}] 资本储备不足，放弃了在 [${tile.name}] 的投资扩建。`, "text-rose-400");
@@ -742,7 +754,7 @@ function triggerGodShrine(player) {
     turnsLeft: GOD_TURNS
   };
 
-  window.sound.playGodArrival();
+  if (window.sound && typeof window.sound.playGodArrival === "function") window.sound.playGodArrival();
   showEventModal(selected.name, `[${player.name}] 诚心在庙宇进香，迎来 [${selected.name}] 附体 5 轮！\n\n特权：${selected.desc}`, "✨");
   addLog(`✨ 神明显显：[${player.name}] 迎来 [${selected.name}] 降临随行护身。`, "text-yellow-400 font-bold");
   
@@ -781,7 +793,7 @@ function triggerRandomEvent(player) {
       text: "由于合规管理得当，喜获政府商业产业创新大基金扶持：+$2,000！",
       action: () => {
         player.cash += 2000;
-        window.sound.playCoin();
+        if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
       }
     },
     {
@@ -789,7 +801,7 @@ function triggerRandomEvent(player) {
       text: "遭遇不正当竞争反垄断重罚，强制向总台补缴罚没准备金：-$1,500！",
       action: () => {
         player.cash = Math.max(0, player.cash - 1500);
-        window.sound.playMisfortune();
+        if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
       }
     },
     {
@@ -799,7 +811,7 @@ function triggerRandomEvent(player) {
         const types = ["wealth", "earth"];
         const t = types[Math.floor(Math.random() * types.length)];
         player.god = { type: t, turnsLeft: 4 };
-        window.sound.playGodArrival();
+        if (window.sound && typeof window.sound.playGodArrival === "function") window.sound.playGodArrival();
         addLog(`🧙 神意恩赐：[${player.name}] 遇到神随行护航 4 轮！`);
       }
     },
@@ -808,7 +820,7 @@ function triggerRandomEvent(player) {
       text: "恶性通货膨胀风暴来袭，强制造成玩家大额资产流失：-$1,800！",
       action: () => {
         player.cash = Math.max(0, player.cash - 1800);
-        window.sound.playMisfortune();
+        if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
       }
     }
   ];
@@ -900,7 +912,7 @@ function simulateAISmartStockTrade(aiPlayer) {
       aiPlayer.stockCosts[s.symbol] = 0;
 
       addLog(`💱 AI 量化交易：[${aiPlayer.name}] 指导平仓 [${s.name}] 全部 ${holdingCount} 股，收回现金 +$${cashBack} (${profitStr})！`, "text-emerald-400");
-      window.sound.playCoin();
+      if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
     }
 
     if (aiPlayer.cash > 5000 && currentPrice <= minInHistory * 1.1) {
@@ -917,7 +929,7 @@ function simulateAISmartStockTrade(aiPlayer) {
         aiPlayer.stockCosts[s.symbol] = parseFloat(totalCostBasis.toFixed(2));
 
         addLog(`💱 AI 量化交易：[${aiPlayer.name}] 低位扫货 [${s.name}] ${buyCount} 股，投资资本 -$${cost} (成本均价均记:$${aiPlayer.stockCosts[s.symbol].toFixed(1)})。`, "text-cyan-400");
-        window.sound.playCoin();
+        if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
       }
     }
   });
@@ -926,6 +938,7 @@ function simulateAISmartStockTrade(aiPlayer) {
 // --- 综合看板 UI 控制 ---
 function updateStockTickerUI() {
   const ticker = document.getElementById("stock-ticker");
+  if (!ticker) return;
   ticker.innerHTML = "";
   gameStocks.forEach(s => {
     const change = s.trend.length >= 2 ? s.price - s.trend[s.trend.length - 2] : 0;
@@ -942,6 +955,7 @@ function updateStockTickerUI() {
 
 function updatePlayerRanksUI() {
   const rankContainer = document.getElementById("player-ranks");
+  if (!rankContainer) return;
   rankContainer.innerHTML = "";
 
   const sorted = [...players].map(p => {
@@ -1021,18 +1035,20 @@ function renderStockMarketDetails() {
   document.getElementById("stock-user-cash").textContent = `$${activePlayer.cash.toLocaleString()}`;
 
   const btnContainer = document.getElementById("stock-select-buttons");
-  btnContainer.innerHTML = "";
-  gameStocks.forEach((s, idx) => {
-    const btn = document.createElement("button");
-    const activeClass = (selectedStockIndex === idx) ? "bg-cyan-500 text-slate-950 border-cyan-400" : "bg-slate-800 text-slate-300 border-slate-700/60 hover:bg-slate-750";
-    btn.className = `border py-2 rounded-xl text-xs font-bold transition-all uppercase tracking-widest ${activeClass}`;
-    btn.textContent = s.symbol;
-    btn.onclick = () => {
-      selectedStockIndex = idx;
-      renderStockMarketDetails();
-    };
-    btnContainer.appendChild(btn);
-  });
+  if (btnContainer) {
+    btnContainer.innerHTML = "";
+    gameStocks.forEach((s, idx) => {
+      const btn = document.createElement("button");
+      const activeClass = (selectedStockIndex === idx) ? "bg-cyan-500 text-slate-950 border-cyan-400" : "bg-slate-800 text-slate-300 border-slate-700/60 hover:bg-slate-750";
+      btn.className = `border py-2 rounded-xl text-xs font-bold transition-all uppercase tracking-widest ${activeClass}`;
+      btn.textContent = s.symbol;
+      btn.onclick = () => {
+        selectedStockIndex = idx;
+        renderStockMarketDetails();
+      };
+      btnContainer.appendChild(btn);
+    });
+  }
 
   const stock = gameStocks[selectedStockIndex];
   document.getElementById("stock-detail-name").textContent = `${stock.name} (${stock.symbol})`;
@@ -1061,40 +1077,44 @@ function renderStockMarketDetails() {
   document.getElementById("stock-detail-hold").innerHTML = holdDetailHTML;
 
   // 触发 stock.js 中的高阶金融图表渲染
-  window.stockEngine.renderChart(stock);
+  if (window.stockEngine && typeof window.stockEngine.renderChart === "function") {
+    window.stockEngine.renderChart(stock);
+  }
 
   // 我的仓位汇总
   const holdingList = document.getElementById("stock-holding-list");
-  holdingList.innerHTML = "";
-  
-  let hasAnyStock = false;
-  gameStocks.forEach(s => {
-    const count = activePlayer.stockHoldings[s.symbol] || 0;
-    const costBasisPrice = activePlayer.stockCosts[s.symbol] || 0;
-    if (count > 0) {
-      hasAnyStock = true;
-      const profit = count * (s.price - costBasisPrice);
-      const profitColor = profit >= 0 ? 'text-emerald-400' : 'text-rose-400';
-      const profitSign = profit >= 0 ? '+' : '';
-      
-      const row = document.createElement("div");
-      row.className = "flex justify-between items-center bg-slate-900 p-2.5 rounded-xl border border-slate-850 text-xs text-slate-300 font-mono";
-      row.innerHTML = `
-        <div class="flex flex-col">
-          <span class="font-bold text-white">${s.name} (${s.symbol})</span>
-          <span class="text-[10px] text-slate-500">Hold: ${count} 股</span>
-        </div>
-        <div class="text-right flex flex-col">
-          <span class="text-cyan-400 font-bold">成本均价: $${costBasisPrice.toFixed(2)}</span>
-          <span class="${profitColor} font-bold text-[10px]">${profitSign}$${Math.floor(profit)} (${((profit / (count * costBasisPrice)) * 100).toFixed(1)}%)</span>
-        </div>
-      `;
-      holdingList.appendChild(row);
-    }
-  });
+  if (holdingList) {
+    holdingList.innerHTML = "";
+    
+    let hasAnyStock = false;
+    gameStocks.forEach(s => {
+      const count = activePlayer.stockHoldings[s.symbol] || 0;
+      const costBasisPrice = activePlayer.stockCosts[s.symbol] || 0;
+      if (count > 0) {
+        hasAnyStock = true;
+        const profit = count * (s.price - costBasisPrice);
+        const profitColor = profit >= 0 ? 'text-emerald-400' : 'text-rose-400';
+        const profitSign = profit >= 0 ? '+' : '';
+        
+        const row = document.createElement("div");
+        row.className = "flex justify-between items-center bg-slate-900 p-2.5 rounded-xl border border-slate-850 text-xs text-slate-300 font-mono";
+        row.innerHTML = `
+          <div class="flex flex-col">
+            <span class="font-bold text-white">${s.name} (${s.symbol})</span>
+            <span class="text-[10px] text-slate-500">Hold: ${count} 股</span>
+          </div>
+          <div class="text-right flex flex-col">
+            <span class="text-cyan-400 font-bold">成本均价: $${costBasisPrice.toFixed(2)}</span>
+            <span class="${profitColor} font-bold text-[10px]">${profitSign}$${Math.floor(profit)} (${((profit / (count * costBasisPrice)) * 100).toFixed(1)}%)</span>
+          </div>
+        `;
+        holdingList.appendChild(row);
+      }
+    });
 
-  if (!hasAnyStock) {
-    holdingList.innerHTML = `<div class="text-slate-500 text-xs italic text-center py-3">暂无任何持仓股份</div>`;
+    if (!hasAnyStock) {
+      holdingList.innerHTML = `<div class="text-slate-500 text-xs italic text-center py-3">暂无任何持仓股份</div>`;
+    }
   }
 }
 
@@ -1126,7 +1146,6 @@ function tradeStock(type) {
       const held = activePlayer.stockHoldings[stock.symbol] || 0;
       const currentCost = activePlayer.stockCosts[stock.symbol] || 0;
       
-      // 加权均价公式：新成本 = (旧持有数*旧成本 + 购买数*购入价) / 总持有数
       const totalCostBasis = ((held * currentCost) + (amount * stock.price)) / (held + amount);
       
       activePlayer.cash -= cost;
@@ -1134,7 +1153,7 @@ function tradeStock(type) {
       activePlayer.stockCosts[stock.symbol] = parseFloat(totalCostBasis.toFixed(2));
 
       addLog(`💱 股市买入：[${activePlayer.name}] 扫货买入 [${stock.name}] ${amount} 股 (成交价:$${stock.price.toFixed(2)}，持仓均价:$${activePlayer.stockCosts[stock.symbol].toFixed(2)})。`, "text-emerald-400");
-      window.sound.playCoin();
+      if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
     } else {
       alert("可用现金准备金不足，交易指令失败！");
     }
@@ -1153,7 +1172,7 @@ function tradeStock(type) {
       }
 
       addLog(`💱 股市卖出：[${activePlayer.name}] 平仓卖出 [${stock.name}] ${amount} 股，套现 $${revenue} (${profitStr})！`, "text-rose-400");
-      window.sound.playCoin();
+      if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
     } else {
       alert("阁下的持仓份额中并没有足够股数可以抛售！");
     }
@@ -1166,6 +1185,7 @@ function tradeStock(type) {
 // --- 系统日志辅助模块 ---
 function addLog(text, customClass = "text-slate-300") {
   const logs = document.getElementById("game-logs");
+  if (!logs) return;
   const item = document.createElement("div");
   item.className = `p-1.5 border-b border-slate-800/40 leading-relaxed font-mono ${customClass}`;
   item.textContent = `[ROUND ${roundCount}] ${text}`;
@@ -1174,16 +1194,35 @@ function addLog(text, customClass = "text-slate-300") {
 }
 
 function clearLogs() {
-  document.getElementById("game-logs").innerHTML = "";
+  const logs = document.getElementById("game-logs");
+  if (logs) logs.innerHTML = "";
 }
 
 function showEventModal(title, text, icon = "🎰") {
-  document.getElementById("event-modal-title").textContent = title;
-  document.getElementById("event-modal-text").innerHTML = text.replace(/\n/g, "<br>");
-  document.getElementById("event-modal-icon").textContent = icon;
-  document.getElementById("event-modal").classList.remove("hidden");
+  const modal = document.getElementById("event-modal");
+  const modalTitle = document.getElementById("event-modal-title");
+  const modalText = document.getElementById("event-modal-text");
+  const modalIcon = document.getElementById("event-modal-icon");
+  if (!modal || !modalTitle || !modalText || !modalIcon) return;
+  
+  modalTitle.textContent = title;
+  modalText.innerHTML = text.replace(/\n/g, "<br>");
+  modalIcon.textContent = icon;
+  modal.classList.remove("hidden");
 }
 
 function closeEventModal() {
-  document.getElementById("event-modal").classList.add("hidden");
+  const modal = document.getElementById("event-modal");
+  if (modal) modal.classList.add("hidden");
+}
+
+// --- 自动初始化引导界面 (避免 window.onload 被其他脚本覆盖) ---
+function initGameSetup() {
+  renderSetupScreen();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initGameSetup);
+} else {
+  initGameSetup();
 }
