@@ -6,14 +6,50 @@
   <title>大富翁：资本帝国复利版</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="styles.css">
   <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #0b0c10;
+      -webkit-font-smoothing: antialiased;
+      color: #f1f5f9;
+    }
+
     /* 隐藏所有滚动条，保持游戏全屏沉浸感 */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* 骰子3D翻滚抖动 */
+    @keyframes diceRoll {
+      0% { transform: rotate(0deg) scale(1); }
+      30% { transform: rotate(140deg) scale(1.15); }
+      70% { transform: rotate(-140deg) scale(0.9); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+    .dice-rolling { animation: diceRoll 0.5s ease-out infinite; }
+
+    /* 💸 弹跳现金粒子飘动动画气泡 */
+    @keyframes floatUp {
+      0% { transform: translate(-50%, 0) scale(0.7); opacity: 0; }
+      15% { transform: translate(-50%, -24px) scale(1.2); opacity: 1; }
+      80% { transform: translate(-50%, -45px) scale(1); opacity: 0.95; }
+      100% { transform: translate(-50%, -64px) scale(0.8); opacity: 0; }
+    }
+
+    .floating-money-node {
+      position: absolute;
+      font-weight: 900;
+      font-size: 18px;
+      animation: floatUp 1.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+      pointer-events: none;
+      z-index: 9999;
+      font-family: "Impact", "Arial Black", sans-serif;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+    .money-gain { color: #34d399; }
+    .money-loss { color: #fb7185; }
   </style>
 </head>
-<body class="text-gray-100 bg-slate-950 p-2 md:p-4 font-sans antialiased min-h-screen flex flex-col justify-center items-center overflow-hidden">
+<body class="p-2 md:p-4 min-h-screen flex flex-col justify-center items-center overflow-hidden">
 
   <!-- 游戏主容器 -->
   <div id="app" class="w-full h-full flex items-center justify-center max-w-[1800px] mx-auto">
@@ -24,7 +60,7 @@
         <h1 class="text-4xl font-black bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 bg-clip-text text-transparent filter drop-shadow">
           大富翁：资本帝国
         </h1>
-        <p class="text-slate-500 text-xs mt-2 uppercase tracking-widest font-bold">16x9 自适应宽幅实景沙盘模式</p>
+        <p class="text-slate-500 text-xs mt-2 uppercase tracking-widest font-bold">16x9 宽幅全尺寸沙盘 · 纯净策略博弈</p>
       </div>
 
       <!-- 游戏全局规则参数微调 -->
@@ -43,8 +79,8 @@
         <div class="font-bold text-emerald-400 mb-1">⚖️ 资本复利法则：</div>
         <div>1. 城市地价分为极品至平民四档: <span class="text-white font-bold">$3500, $3000, $2500, $2000</span>。</div>
         <div>2. 基础过路费始终维持为当前地价的 <span class="text-white font-bold">10%</span>。升级不设上限。</div>
-        <div>3. <span class="text-amber-400 font-bold">资产利息</span>：回合开始时自动获取总资产 <span class="text-white">1%</span> 的无风险利息。</div>
-        <div>4. <span class="text-purple-400 font-bold">命运转盘</span>：所有命运黑天鹅事件按总资产的 <span class="text-white">5%</span> 动态核算。</div>
+        <div>3. <span class="text-amber-400 font-bold">资产生息</span>：回合开始时自动获取总资产 <span class="text-white">1%</span> 的无风险利息收益。</div>
+        <div>4. <span class="text-purple-400 font-bold">命运转盘</span>：所有命运黑天鹅事件惩戒与红利均按总资产的 <span class="text-white">5%</span> 动态核算。</div>
       </div>
 
       <!-- 动态分配容器 -->
@@ -58,67 +94,57 @@
     <!-- 2. 核心大游戏主战场界面 -->
     <div id="game-screen" class="hidden w-full flex items-center justify-center overflow-hidden">
       
-      <!-- 采用 16列 x 9行 完美比例，使用底层 inline-style 彻底锁死物理网格，防范 Tailwind 解析失效 -->
-      <div id="board-container" class="grid gap-0.5 sm:gap-1 p-1 bg-slate-950 border border-slate-900 rounded-[1.25rem] relative w-full aspect-video max-h-[96vh] shadow-2xl"
+      <!-- 采用原生 Inline-Style 彻底锁死 16列 x 9行 的完美比例物理网格，免疫一切 CSS 解析失效 -->
+      <div id="board-container" class="grid gap-1 p-1.5 bg-slate-950 border border-slate-900 rounded-[1.25rem] relative w-full aspect-video max-h-[96vh] shadow-2xl"
            style="grid-template-columns: repeat(16, minmax(0, 1fr)); grid-template-rows: repeat(9, minmax(0, 1fr));">
         
         <!-- ==========================================
-             中央指挥大厅：物理锁死坐标 (跨列 2~15，跨行 2~8)，绝对不与右侧城市重叠！
+             中央指挥大厅区块，按底层网格直接绑定，完全占满中间留白
              ========================================== -->
-        <div class="bg-slate-900/90 border border-slate-850 rounded-xl p-3 sm:p-5 grid grid-cols-12 gap-3 sm:gap-5 overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.6)] z-0 relative"
-             style="grid-column: 2 / 16; grid-row: 2 / 9;">
-          
-          <!-- 大厅左侧：排行榜 (占据 4 列，约 33% 宽度，纵向填满) -->
-          <div class="col-span-4 flex flex-col h-full bg-slate-950/60 p-3.5 border border-slate-800/80 rounded-xl overflow-hidden shadow-inner">
-            <div class="text-xs lg:text-sm font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-800/80 pb-3 flex justify-between shrink-0">
-              <span>🏆 财阀资产排行榜</span>
-              <span class="text-emerald-400 animate-pulse text-[10px]">复利运转中</span>
-            </div>
-            <!-- 排行榜卡片列表 (利用 flex-grow 无限延伸填补底部黑边) -->
-            <div id="player-ranks" class="flex-grow flex flex-col gap-2.5 overflow-y-auto no-scrollbar">
-              <!-- JS 动态注入 -->
+             
+        <!-- 大厅左侧：排行榜 (跨越列 2~6，行 2~8，按城市比例尺寸完全挂靠对齐) -->
+        <div class="bg-slate-900/90 border border-slate-800/80 rounded-xl p-3 md:p-4 flex flex-col shadow-inner overflow-hidden"
+             style="grid-column: 2 / 7; grid-row: 2 / 9;">
+          <div class="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-2 md:mb-3 border-b border-slate-800/80 pb-2 md:pb-3 flex justify-between shrink-0">
+            <span>🏆 财阀资产排行榜</span>
+            <span class="text-emerald-400 animate-pulse text-[9px] md:text-[10px]">复利运转中</span>
+          </div>
+          <div id="player-ranks" class="flex-grow flex flex-col gap-2 overflow-y-auto no-scrollbar">
+            <!-- 排行榜卡片 -->
+          </div>
+        </div>
+
+        <!-- 大厅右上侧：行动中枢 (跨越列 7~15，行 2~4) -->
+        <div class="bg-slate-900 border border-slate-800 p-3 md:p-4 rounded-xl flex items-center justify-between shadow-lg"
+             style="grid-column: 7 / 16; grid-row: 2 / 4;">
+          <div class="flex items-center gap-3 md:gap-4 shrink-0 pl-1 md:pl-2">
+            <div id="current-player-avatar" class="text-4xl md:text-5xl lg:text-6xl filter drop-shadow animate-bounce">👧</div>
+            <div>
+              <span class="text-[9px] md:text-[11px] text-slate-500 uppercase font-black block tracking-widest">当前行动方</span>
+              <span id="current-player-name" class="text-sm md:text-lg lg:text-xl font-black text-white block mt-0.5">加载中...</span>
             </div>
           </div>
-
-          <!-- 大厅右侧：行动中枢 + 战局日志 (占据 8 列，约 66% 宽度) -->
-          <div class="col-span-8 flex flex-col h-full gap-3 sm:gap-5">
-            
-            <!-- 🎲 掷骰行动面板 (高度压缩，留空间给日志) -->
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between shadow-lg shrink-0">
-              
-              <div class="flex items-center gap-3 lg:gap-4 shrink-0 pl-2">
-                <div id="current-player-avatar" class="text-4xl lg:text-5xl filter drop-shadow">👧</div>
-                <div>
-                  <span class="text-[10px] text-slate-500 uppercase font-black block tracking-widest">当前行动方</span>
-                  <span id="current-player-name" class="text-sm lg:text-lg font-black text-white block mt-0.5">加载中...</span>
-                </div>
-              </div>
-
-              <!-- 骰子与操作按钮 -->
-              <div class="flex items-center gap-3 lg:gap-4 pr-2">
-                <div id="dice-element" class="w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-700 text-white text-2xl lg:text-3xl font-black rounded-xl flex items-center justify-center shadow-lg select-none cursor-pointer">🎲</div>
-                <div class="flex flex-col gap-1.5 lg:gap-2 w-28 lg:w-32">
-                  <button id="btn-roll" onclick="triggerDiceRoll()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-[11px] lg:text-xs px-2 py-1.5 lg:py-2.5 rounded-lg transition-all shadow-md">
-                    🎲 开始掷骰
-                  </button>
-                  <button id="btn-end-turn" onclick="endTurn()" disabled class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 font-black text-[11px] lg:text-xs px-2 py-1.5 lg:py-2.5 rounded-lg transition-all">
-                    ⏭ 结束回合
-                  </button>
-                </div>
-              </div>
+          <div class="flex items-center gap-3 md:gap-4 pr-1 md:pr-2">
+            <div id="dice-element" class="w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-700 text-white text-2xl md:text-3xl lg:text-4xl font-black rounded-xl flex items-center justify-center shadow-lg select-none cursor-pointer">🎲</div>
+            <div class="flex flex-col gap-1.5 md:gap-2 w-24 md:w-28 lg:w-36">
+              <button id="btn-roll" onclick="triggerDiceRoll()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-[10px] md:text-[11px] lg:text-sm px-2 py-1.5 md:py-2 lg:py-2.5 rounded-lg transition-all shadow-md">
+                🎲 开始掷骰
+              </button>
+              <button id="btn-end-turn" onclick="endTurn()" disabled class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 font-black text-[10px] md:text-[11px] lg:text-sm px-2 py-1.5 md:py-2 lg:py-2.5 rounded-lg transition-all">
+                ⏭ 结束回合
+              </button>
             </div>
-
-            <!-- 📜 战局实时日志 (flex-grow 自动向下填满所有剩余空间) -->
-            <div class="bg-slate-950/80 border border-slate-850 p-4 rounded-xl flex flex-col flex-grow min-h-0 shadow-xl">
-              <div class="text-[10px] lg:text-xs font-black text-slate-500 uppercase mb-3 flex justify-between items-center border-b border-slate-850 pb-3 shrink-0">
-                <span id="quick-tip" class="text-cyan-400">系统：准备掷骰</span>
-                <button onclick="clearLogs()" class="hover:text-white text-slate-400 text-[9px] lg:text-[10px] bg-slate-800 px-3 py-1.5 rounded transition-all">清空记录</button>
-              </div>
-              <!-- 这里加了 pr-2 防止文字太贴右边，并且通过 no-scrollbar 隐藏滚动条 -->
-              <div id="game-logs" class="flex-grow overflow-y-auto text-[10px] lg:text-[11px] space-y-1.5 text-slate-400 no-scrollbar pr-2"></div>
-            </div>
-
           </div>
+        </div>
+
+        <!-- 大厅右下侧：战局日志 (跨越列 7~15，行 4~8) -->
+        <div class="bg-slate-950/90 border border-slate-850 p-3 md:p-4 rounded-xl flex flex-col shadow-xl overflow-hidden"
+             style="grid-column: 7 / 16; grid-row: 4 / 9;">
+          <div class="text-[10px] md:text-[11px] lg:text-xs font-black text-slate-500 uppercase mb-2 md:mb-3 flex justify-between items-center border-b border-slate-850 pb-2 md:pb-3 shrink-0">
+            <span id="quick-tip" class="text-cyan-400">系统：准备掷骰</span>
+            <button onclick="clearLogs()" class="hover:text-white text-slate-400 text-[9px] md:text-[10px] bg-slate-800 px-3 py-1.5 rounded transition-all">清空记录</button>
+          </div>
+          <div id="game-logs" class="flex-grow overflow-y-auto text-[9px] md:text-[10px] lg:text-xs space-y-1 md:space-y-1.5 text-slate-400 no-scrollbar pr-2"></div>
         </div>
       </div>
     </div>
@@ -162,7 +188,778 @@
     </div>
   </div>
 
-  <script src="js/audio.js"></script>
-  <script src="js/game.js"></script>
+  <!-- 游戏核心逻辑脚本整合 -->
+  <script>
+    // --- 音效模块 ---
+    class AudioController {
+      constructor() { this.ctx = null; }
+      init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+      playCoin() {
+        this.init(); if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+        osc.type = 'sine'; osc.frequency.setValueAtTime(880, now); osc.frequency.exponentialRampToValueAtTime(1320, now + 0.1);
+        gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(now); osc.stop(now + 0.3);
+      }
+      playDice() {
+        this.init(); if (!this.ctx) return;
+        const now = this.ctx.currentTime, bufferSize = this.ctx.sampleRate * 0.15, buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        const noise = this.ctx.createBufferSource(); noise.buffer = buffer;
+        const filter = this.ctx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 1000;
+        const gain = this.ctx.createGain(); gain.gain.setValueAtTime(0.06, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        noise.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination); noise.start(now);
+      }
+      playMisfortune() {
+        this.init(); if (!this.ctx) return;
+        const now = this.ctx.currentTime, osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(293.66, now); osc.frequency.linearRampToValueAtTime(146.83, now + 0.55);
+        gain.gain.setValueAtTime(0.08, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(now); osc.stop(now + 0.55);
+      }
+    }
+    window.sound = new AudioController();
+
+    // --- DOM 安全操作接口 ---
+    const DOM = {
+      setText: (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; },
+      setHTML: (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; },
+      setDisabled: (id, disabled) => { const el = document.getElementById(id); if (el) el.disabled = disabled; },
+      show: (id) => { const el = document.getElementById(id); if (el) el.classList.remove('hidden'); },
+      hide: (id) => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); },
+      addClass: (id, cls) => { const el = document.getElementById(id); if (el) el.classList.add(cls); },
+      removeClass: (id, cls) => { const el = document.getElementById(id); if (el) el.classList.remove(cls); },
+      setClass: (id, cls) => { const el = document.getElementById(id); if (el) el.className = cls; } 
+    };
+
+    // --- 游戏核心数据状态 ---
+    let players = [], roundCount = 1, currentTurnIndex = 0, mapStates = [];
+    let isDiceRolling = false, currentPropPending = null, passStartBonus = 10000;
+    const MAP_LENGTH = 46; 
+
+    const PLAYER_TEMPLATES = [
+      { name: "孙小美 👧", color: "bg-pink-500", textCol: "text-pink-400", avatar: "👧", border: "border-pink-500", shadow: "shadow-pink-500/40" },
+      { name: "钱夫人 👩‍💼", color: "bg-blue-500", textCol: "text-blue-400", avatar: "👩‍💼", border: "border-blue-500", shadow: "shadow-blue-500/40" },
+      { name: "阿土伯 👴", color: "bg-green-500", textCol: "text-green-400", avatar: "👴", border: "border-green-500", shadow: "shadow-green-500/40" },
+      { name: "金贝贝 👶", color: "bg-amber-500", textCol: "text-amber-400", avatar: "👶", border: "border-amber-500", shadow: "shadow-amber-500/40" }
+    ];
+
+    const GLOBAL_CITIES = [
+      "北京", "东京", "纽约", "伦敦", "巴黎", "罗马", "悉尼", "柏林", "多伦多", "新加坡", 
+      "迪拜", "莫斯科", "首尔", "上海", "深圳", "香港", "曼谷", "孟买", "里约", "开普敦", 
+      "阿姆斯特丹", "日内瓦", "维也纳", "马德里", "里斯本", "斯德哥尔摩", "奥斯陆", "布鲁塞尔", "雅典", "布拉格", 
+      "华沙", "布达佩斯", "基辅", "都柏林", "赫尔辛基", "马尼拉", "雅加达", "吉隆坡", "河内", "温哥华", 
+      "洛杉矶", "芝加哥", "旧金山", "波士顿", "西雅图", "迈阿密", "休斯敦", "大阪", "慕尼黑", "米兰"
+    ];
+
+    // --- 🧱 生成 16x9 棋盘 (共 46 格) ---
+    const TILE_DEFS = [];
+    function generate46Tiles() {
+      let cityIndex = 0;
+      const tiers = [3500, 3000, 2500, 2000];
+      
+      for (let i = 0; i < MAP_LENGTH; i++) {
+        let col = 1, row = 1;
+        // 顺时针环形映射算法
+        if (i <= 15) { col = i + 1; row = 1; } 
+        else if (i >= 16 && i <= 22) { col = 16; row = (i - 15) + 1; } 
+        else if (i >= 23 && i <= 38) { col = 16 - (i - 23); row = 9; } 
+        else { col = 1; row = 9 - (i - 38); } 
+
+        let type = "LAND", name = "", color = "from-cyan-500 to-blue-600 font-black", cost = tiers[cityIndex % 4];
+        let desc = "";
+
+        if (i === 0) { type = "START"; name = "起点 🏁"; color = "bg-red-500"; cost = 0; }
+        else if (i === 15) { type = "HOSPITAL"; name = "医院 🏥"; color = "bg-blue-600"; cost = 0; }
+        else if (i === 23) { type = "PRISON"; name = "拘留所 🚓"; color = "bg-gray-600"; cost = 0; }
+        else if (i === 38) { type = "CHANCE"; name = "大转盘 🎡"; color = "bg-purple-600"; cost = 0; }
+        else if (i === 7 || i === 30 || i === 42) { 
+          type = "DESTINY"; name = "大转盘 🎡"; color = "bg-purple-600"; cost = 0; 
+        } else {
+          name = GLOBAL_CITIES[cityIndex] || "海外新城";
+          cityIndex++;
+          const colors = ["from-pink-500 to-pink-600", "from-yellow-500 to-amber-500", "from-blue-500 to-cyan-500", "from-emerald-500 to-teal-500"];
+          color = colors[i % 4] + " font-bold";
+        }
+        TILE_DEFS.push({ id: i, col, row, name, type, cost, color, desc });
+      }
+    }
+    generate46Tiles();
+
+    function getPropertyEmoji(type, level) {
+      if (type !== "LAND") {
+        if (type === "START") return "🏁";
+        if (type === "HOSPITAL") return "🏥";
+        if (type === "PRISON") return "🚓";
+        if (type === "CHANCE" || type === "DESTINY") return "🎡";
+        return "📍";
+      }
+      return ["🌳", "🏠", "🏡", "🏢", "🏣", "🏰"][Math.min(level, 5)] || "🏰";
+    }
+
+    function getDiceFace(value) {
+      return ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"][value - 1] || "🎲";
+    }
+
+    // 核心复利算法：过路费 = 当前城市总地价的 10%
+    function calculateRent(tileId) {
+      const state = mapStates[tileId];
+      if (!state || TILE_DEFS[tileId].type !== "LAND") return 0;
+      return Math.floor(state.currentValue * 0.1);
+    }
+
+    function calculateNetWorth(player) {
+      let estateVal = 0;
+      mapStates.forEach(st => {
+        if (st.owner === player.id) estateVal += st.currentValue;
+      });
+      return player.cash + estateVal;
+    }
+
+    // --- 日志与UI辅助 ---
+    function addLog(text, customClass = "text-slate-300") {
+      const logs = document.getElementById("game-logs");
+      if (!logs) return;
+      const item = document.createElement("div");
+      item.className = "p-2 mb-1.5 bg-slate-950/60 rounded-lg border border-slate-800/80 leading-relaxed font-mono shadow-inner " + customClass;
+      item.textContent = `[第 ${roundCount} 轮] ${text}`;
+      logs.appendChild(item);
+      logs.scrollTop = logs.scrollHeight;
+    }
+
+    function clearLogs() {
+      DOM.setHTML("game-logs", "");
+    }
+
+    // --- 初始化与游戏循环 ---
+    function renderSetupScreen() {
+      const listContainer = document.getElementById("player-setup-list");
+      if (!listContainer) return;
+      listContainer.innerHTML = "";
+      
+      PLAYER_TEMPLATES.forEach((tpl, index) => {
+        const row = document.createElement("div");
+        row.className = "flex flex-col sm:flex-row items-center justify-between bg-slate-900/60 p-4 mb-3 rounded-2xl border border-slate-700/50 shadow-lg gap-4";
+        row.innerHTML = `<div class="flex items-center gap-4 w-full sm:w-auto">
+          <span class="text-4xl drop-shadow-md">${tpl.avatar}</span>
+          <div class="flex-grow">
+            <input type="text" id="setup-name-${index}" value="${tpl.name}" class="bg-slate-950/80 border border-slate-700 text-white font-bold rounded-lg px-3 py-1.5 text-sm w-full focus:outline-none focus:border-cyan-400">
+            <span class="text-[10px] block text-slate-400 mt-1 uppercase tracking-wider">配戴色: ${tpl.name.split(' ')[0]}</span>
+          </div>
+        </div>
+        <div class="flex gap-3 w-full sm:w-auto bg-slate-950/50 p-2.5 rounded-xl justify-center">
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" name="setup-type-${index}" value="human" ${index === 0 ? "checked" : ""} class="accent-cyan-400 w-4 h-4">
+            <span class="text-xs font-bold text-slate-300">玩家</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" name="setup-type-${index}" value="ai" ${index > 0 ? "checked" : ""} class="accent-cyan-400 w-4 h-4">
+            <span class="text-xs font-bold text-slate-400">AI</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" name="setup-type-${index}" value="none" class="accent-cyan-400 w-4 h-4">
+            <span class="text-xs font-bold text-slate-500">不参战</span>
+          </label>
+        </div>`;
+        listContainer.appendChild(row);
+      });
+    }
+
+    function startGame() {
+      if (window.sound && typeof window.sound.init === "function") window.sound.init();
+      
+      const initCash = parseInt(document.getElementById("init-cash")?.value) || 50000;
+      passStartBonus = parseInt(document.getElementById("start-bonus")?.value) || 10000;
+
+      players = [];
+      PLAYER_TEMPLATES.forEach((tpl, index) => {
+        const nameInput = document.getElementById("setup-name-" + index);
+        const typeInput = document.querySelector('input[name="setup-type-' + index + '"]:checked');
+        if (!nameInput || !typeInput) return;
+
+        if (typeInput.value !== "none") {
+          players.push({
+            id: index,
+            name: nameInput.value,
+            avatar: tpl.avatar,
+            color: tpl.color,
+            border: tpl.border,
+            shadow: tpl.shadow,
+            textCol: tpl.textCol,
+            cash: initCash,
+            position: 0,
+            isBankrupt: false,
+            isAI: typeInput.value === "ai",
+            skipTurns: 0
+          });
+        }
+      });
+
+      if (players.length < 2) {
+        alert("必须保留最少 2 名角色才能开启地产大亨之战！");
+        return;
+      }
+
+      mapStates = TILE_DEFS.map(tile => ({ id: tile.id, owner: null, level: 0, currentValue: tile.cost }));
+
+      DOM.hide("setup-screen");
+      DOM.show("game-screen");
+
+      renderBoard();
+      updatePlayerRanksUI();
+
+      currentTurnIndex = 0;
+      roundCount = 1;
+      addLog("🎬 16x9 宽幅实景大地图生成完毕！纯粹资本商战正式开盘！", "text-emerald-400 font-bold");
+      
+      startPlayerTurn();
+    }
+
+    function renderBoard() {
+      const container = document.getElementById("board-container");
+      if (!container) return;
+      container.querySelectorAll(".board-tile").forEach(el => el.remove());
+
+      TILE_DEFS.forEach(tile => {
+        const tileDiv = document.createElement("div");
+        tileDiv.id = "tile-" + tile.id;
+        tileDiv.style.gridColumn = tile.col;
+        tileDiv.style.gridRow = tile.row;
+
+        let headerColor = "bg-slate-800";
+        let subText = "";
+        const state = mapStates[tile.id];
+
+        if (tile.type === "LAND") {
+          headerColor = "bg-gradient-to-r " + tile.color;
+          subText = `<span class="text-slate-500">买:$${tile.cost.toLocaleString()}</span>`;
+        } else if (tile.type === "START") {
+          headerColor = "bg-red-500"; subText = "周转红利";
+        } else if (tile.type === "CHANCE" || tile.type === "DESTINY") {
+          headerColor = "bg-purple-600"; subText = "资产变数";
+        } else if (tile.type === "HOSPITAL" || tile.type === "PRISON") {
+          headerColor = "bg-blue-600"; subText = "停顿休息";
+        }
+
+        tileDiv.className = "board-tile bg-slate-900 border border-slate-800/85 rounded-[0.6rem] p-0.5 md:p-1 flex flex-col justify-between overflow-hidden shadow relative select-none cursor-pointer h-full w-full";
+        tileDiv.innerHTML = `
+          <div class="${headerColor} text-[7px] md:text-[9.5px] px-0.5 md:px-1 py-[2px] rounded text-center font-bold text-slate-950 shadow truncate">${tile.name}</div>
+          <div class="flex-grow flex flex-col items-center justify-center relative min-h-0">
+            <span id="tile-house-visual-${tile.id}" class="text-xs md:text-xl lg:text-2xl filter drop-shadow-[0_2px_4px_rgba(255,255,255,0.05)]">
+              ${getPropertyEmoji(tile.type, state ? state.level : 0)}
+            </span>
+            <div id="tile-owner-indicator-${tile.id}" class="absolute bottom-0 text-[6px] md:text-[8px] font-black px-1 rounded shadow-lg"></div>
+          </div>
+          <div class="text-[6px] md:text-[8px] lg:text-[9px] text-center font-bold tracking-tight truncate w-full" id="tile-footer-${tile.id}">${subText}</div>
+          <div id="tile-players-holder-${tile.id}" class="absolute inset-x-0 bottom-0.5 flex justify-center gap-0.5 flex-wrap z-10 pointer-events-none px-1"></div>`;
+        container.appendChild(tileDiv);
+      });
+
+      updatePlayerPositionsUI();
+      updatePropertiesUI();
+    }
+
+    function updatePropertiesUI() {
+      mapStates.forEach(state => {
+        const tile = TILE_DEFS[state.id];
+        const tileDiv = document.getElementById("tile-" + state.id);
+        const indicator = document.getElementById("tile-owner-indicator-" + state.id);
+        const footer = document.getElementById("tile-footer-" + state.id);
+        const houseVisual = document.getElementById("tile-house-visual-" + state.id);
+        
+        if (!tile || !tileDiv || !indicator || !footer || !houseVisual) return;
+        if (tile.type !== "LAND") return;
+
+        if (state.owner !== null) {
+          const owner = players.find(p => p.id === state.owner);
+          if (owner) {
+            tileDiv.className = `board-tile bg-slate-900 border-[1.5px] md:border-2 ${owner.border} rounded-[0.6rem] p-0.5 md:p-1 flex flex-col justify-between overflow-hidden relative select-none cursor-pointer h-full w-full ${owner.shadow}`;
+            indicator.className = `absolute bottom-0 text-[6px] md:text-[8px] text-slate-950 font-black px-1.5 py-0.5 rounded bg-white shadow-lg`;
+            indicator.textContent = owner.name.split(" ")[0];
+            footer.innerHTML = `<span class="text-emerald-400 font-extrabold truncate w-full block">租:$${calculateRent(state.id).toLocaleString()}</span>`;
+            houseVisual.textContent = getPropertyEmoji("LAND", state.level);
+          }
+        } else {
+          tileDiv.className = "board-tile bg-slate-900 border border-slate-800/85 rounded-[0.6rem] p-0.5 md:p-1 flex flex-col justify-between overflow-hidden shadow relative select-none cursor-pointer h-full w-full";
+          indicator.className = "hidden";
+          footer.innerHTML = `<span class="text-slate-500 font-bold truncate w-full block">买:$${tile.cost.toLocaleString()}</span>`;
+          houseVisual.textContent = "🌳";
+        }
+      });
+    }
+
+    function updatePlayerPositionsUI() {
+      for (let i = 0; i < MAP_LENGTH; i++) {
+        const h = document.getElementById("tile-players-holder-" + i);
+        if (h) h.innerHTML = "";
+      }
+
+      players.forEach(p => {
+        if (p.isBankrupt) return;
+        const holder = document.getElementById("tile-players-holder-" + p.position);
+        if (holder) {
+          const pBadge = document.createElement("div");
+          pBadge.id = "player-badge-" + p.id;
+          const activeClass = (players[currentTurnIndex].id === p.id) ? "animate-bounce ring-2 ring-yellow-400 z-20" : "ring-1 ring-white/50";
+          pBadge.className = `w-3 h-3 md:w-5 md:h-5 lg:w-6 lg:h-6 rounded-full flex items-center justify-center text-[7px] md:text-[10px] shadow-lg relative cursor-pointer ${p.color} ${activeClass} transition-all duration-350`;
+          pBadge.innerHTML = p.avatar;
+          holder.appendChild(pBadge);
+        }
+      });
+    }
+
+    // --- 💰 浮动金币特效 ---
+    function showFloatingMoney(playerId, amount) {
+      if (amount === 0) return;
+      const badge = document.getElementById("player-badge-" + playerId);
+      if (badge) {
+        const rect = badge.getBoundingClientRect();
+        createFloatingNode(rect.left + window.scrollX + rect.width / 2, rect.top + window.scrollY, amount);
+      }
+      const rankAvatar = document.getElementById("rank-avatar-" + playerId);
+      if (rankAvatar) {
+        const rect = rankAvatar.getBoundingClientRect();
+        createFloatingNode(rect.left + window.scrollX + rect.width / 2, rect.top + window.scrollY, amount);
+      }
+    }
+
+    function createFloatingNode(x, y, amount) {
+      const floatDiv = document.createElement("div");
+      floatDiv.className = "floating-money-node " + (amount >= 0 ? "money-gain" : "money-loss");
+      floatDiv.textContent = (amount >= 0 ? "+" : "") + "$" + Math.abs(amount).toLocaleString();
+      floatDiv.style.left = x + "px";
+      floatDiv.style.top = y + "px";
+      document.body.appendChild(floatDiv);
+      setTimeout(() => floatDiv.remove(), 1400);
+    }
+
+    function adjustPlayerCash(player, amount) {
+      player.cash += amount;
+      if (player.cash < 0) player.cash = 0;
+      showFloatingMoney(player.id, amount);
+      updatePlayerRanksUI();
+    }
+
+    // --- 回合循环引擎 (1% 资产利息) ---
+    function startPlayerTurn() {
+      const p = players[currentTurnIndex];
+      if (p.isBankrupt) { nextTurn(); return; }
+
+      DOM.setText("current-player-avatar", p.avatar);
+      DOM.setText("current-player-name", p.name);
+      DOM.setText("quick-tip", "系统：请点击开始掷骰");
+
+      DOM.setDisabled("btn-end-turn", true);
+      DOM.setDisabled("btn-roll", false);
+      
+      updatePlayerPositionsUI();
+      updatePlayerRanksUI();
+
+      // 1% 资产利息结算
+      const netWorth = calculateNetWorth(p);
+      const interest = Math.floor(netWorth * 0.01);
+      if(interest > 0) {
+        adjustPlayerCash(p, interest);
+        addLog(`🏦 资产生息：[${p.name}] 获得总资产 1% 的银行利息 +$${interest.toLocaleString()}`, "text-emerald-400 font-bold");
+        if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
+      }
+
+      if (p.skipTurns > 0) {
+        p.skipTurns--;
+        addLog(`🏥 [${p.name}] 强制滞留中，无法行动（剩余回合: ${p.skipTurns}）。`, "text-slate-500");
+        DOM.setText("quick-tip", "禁足中，系统自动跳过该回合");
+        
+        DOM.setDisabled("btn-end-turn", false);
+        DOM.setDisabled("btn-roll", true);
+
+        if (p.isAI) setTimeout(() => endTurn(), 1200);
+        return;
+      }
+
+      if (p.isAI) {
+        setTimeout(() => triggerDiceRoll(), 1000);
+      }
+    }
+
+    // --- 掷骰前进机制 ---
+    function triggerDiceRoll() {
+      if (isDiceRolling || players[currentTurnIndex].isBankrupt) return;
+      const p = players[currentTurnIndex];
+      DOM.setDisabled("btn-roll", true);
+      isDiceRolling = true;
+
+      DOM.addClass("dice-element", "dice-rolling");
+      if (window.sound && typeof window.sound.playDice === "function") window.sound.playDice();
+
+      let diceValue = 1;
+      let counter = 0;
+      const rollInterval = setInterval(() => {
+        diceValue = Math.floor(Math.random() * 6) + 1;
+        DOM.setText("dice-element", getDiceFace(diceValue));
+        counter++;
+        if (counter > 8) {
+          clearInterval(rollInterval);
+          DOM.removeClass("dice-element", "dice-rolling");
+          isDiceRolling = false;
+          
+          addLog(`🎲 [${p.name}] 掷出了 [${diceValue}] 点前进！`, "text-slate-100");
+          movePlayerStepByStep(p, diceValue);
+        }
+      }, 75);
+    }
+
+    function movePlayerStepByStep(player, steps) {
+      let currentStep = 0;
+      const moveInterval = setInterval(() => {
+        player.position = (player.position + 1) % MAP_LENGTH;
+        if (player.position === 0 && currentStep < steps - 1) {
+          adjustPlayerCash(player, passStartBonus);
+          addLog(`🏪 [${player.name}] 路过起点，领取资本红利：+$${passStartBonus.toLocaleString()}！`, "text-emerald-400 font-bold");
+          if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
+        }
+        updatePlayerPositionsUI();
+        currentStep++;
+        if (currentStep >= steps) {
+          clearInterval(moveInterval);
+          evaluateLandingTile(player, player.position);
+        }
+      }, 160);
+    }
+
+    // --- 地格停靠判定 ---
+    function evaluateLandingTile(player, tileId) {
+      const tile = TILE_DEFS[tileId];
+      const state = mapStates[tileId];
+      DOM.setText("quick-tip", `停靠在 [${tile.name}]`);
+
+      if (tile.type === "HOSPITAL" || tile.type === "PRISON") {
+        player.skipTurns = 2;
+        const reason = tile.type === "HOSPITAL" ? "医院静养 2 回合 🏥" : "拘留所禁足 2 回合 🚓";
+        showEventModal("🚨 限制状态", `[${player.name}] 进入了 ${tile.name}，${reason}`, "🚨");
+        addLog(`🚨 [${player.name}] 停靠在 [${tile.name}]，起算禁足 2 回合。`, "text-rose-400");
+        if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
+        prepareEndTurn();
+        return;
+      }
+
+      if (tile.type === "START") {
+        adjustPlayerCash(player, passStartBonus);
+        addLog(`🏪 [${player.name}] 精确降落起点！下发双倍奖金：+$${passStartBonus.toLocaleString()}！`, "text-emerald-400 font-bold");
+        if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
+        prepareEndTurn();
+        return;
+      }
+
+      if (tile.type === "LAND") {
+        if (state.owner === null) {
+          promptPropertyModal(tile, state, "buy");
+        } else if (state.owner === player.id) {
+          promptPropertyModal(tile, state, "upgrade");
+        } else {
+          collectRentLogic(player, state.owner, tileId);
+        }
+        return;
+      }
+
+      if (tile.type === "CHANCE" || tile.type === "DESTINY") {
+        triggerRandomEvent(player);
+        return;
+      }
+
+      prepareEndTurn();
+    }
+
+    function collectRentLogic(renter, ownerId, tileId) {
+      const owner = players.find(p => p.id === ownerId);
+      const finalRent = calculateRent(tileId);
+
+      addLog(`💸 [${renter.name}] 踩中 [${owner.name}] 的城市，需交纳 10% 过路费 $${finalRent.toLocaleString()}。`);
+      
+      if (renter.cash >= finalRent) {
+        adjustPlayerCash(renter, -finalRent);
+        adjustPlayerCash(owner, finalRent);
+        addLog(`💰 [${renter.name}] 支付了过路费，资金汇入对方账户！`, "text-emerald-400");
+        if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
+        prepareEndTurn();
+      } else {
+        triggerLiquidationToPay(renter, owner, finalRent);
+      }
+    }
+
+    function triggerLiquidationToPay(renter, creditor, debt) {
+      addLog(`🚨 [${renter.name}] 现金见底，启动房产权破产级折卖清算以偿还债务！`, "text-rose-500 font-bold");
+      
+      for (let i = 0; i < mapStates.length; i++) {
+        const state = mapStates[i];
+        if (state.owner === renter.id) {
+          const tile = TILE_DEFS[i];
+          // 变卖价格 = 当前总投资价值的 70%
+          const refundPrice = Math.floor(state.currentValue * 0.7);
+          
+          state.owner = null;
+          state.level = 0;
+          state.currentValue = tile.cost; 
+          adjustPlayerCash(renter, refundPrice);
+          
+          addLog(`🏘️ 强制清盘：折卖 [${tile.name}] 产权，变现止损: +$${refundPrice.toLocaleString()}`);
+          updatePropertiesUI();
+
+          if (renter.cash >= debt) break;
+        }
+      }
+
+      if (renter.cash >= debt) {
+        adjustPlayerCash(renter, -debt);
+        adjustPlayerCash(creditor, debt);
+        addLog(`✅ [${renter.name}] 清盘结束，交齐路费，度过破产危机。`, "text-green-400");
+        prepareEndTurn();
+      } else {
+        declareBankruptcy(renter, creditor);
+      }
+    }
+
+    function declareBankruptcy(player, creditor) {
+      player.isBankrupt = true;
+      addLog(`💀 帝国陨落！[${player.name}] 土地售罄仍资不抵债，正式宣告破产出局！`, "text-red-500 font-bold");
+      if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
+
+      if (player.cash > 0 && creditor) {
+        const leftover = player.cash;
+        adjustPlayerCash(player, -leftover);
+        adjustPlayerCash(creditor, leftover);
+      }
+
+      mapStates.forEach(state => {
+        if (state.owner === player.id) {
+          state.owner = null;
+          state.level = 0;
+          state.currentValue = TILE_DEFS[state.id].cost;
+        }
+      });
+
+      updatePropertiesUI();
+      updatePlayerPositionsUI();
+      updatePlayerRanksUI();
+
+      checkGameOver();
+      prepareEndTurn();
+    }
+
+    // --- 🏠 地产购置 / 加盖 复利机制弹窗 ---
+    function promptPropertyModal(tile, state, actionType) {
+      currentPropPending = { tile, state, actionType };
+      const player = players[currentTurnIndex];
+
+      DOM.setClass("prop-color-bar", `h-3 w-full rounded-full mb-5 bg-gradient-to-r ${tile.color.replace(' font-bold', '')}`);
+
+      if (actionType === "buy") {
+        DOM.setText("prop-title", `签署收购：${tile.name}`);
+        DOM.setText("prop-desc", "建立基石，未来可通过无限升级实现租金的复利暴涨！");
+        DOM.setText("modal-label-1", "当前地价 / 等级"); DOM.setText("prop-val-1", `$${tile.cost.toLocaleString()} (Lv.0)`);
+        DOM.setText("modal-label-2", "购地交易金"); DOM.setText("prop-val-2", `$${tile.cost.toLocaleString()}`);
+        DOM.setText("modal-label-3", "建成后过路费(10%)"); DOM.setText("prop-val-3", `$${Math.floor(tile.cost * 0.1).toLocaleString()}`);
+        DOM.setText("prop-confirm-btn", "签署收购");
+      } else {
+        DOM.setText("prop-title", `资本注资：${tile.name}`);
+        DOM.setText("prop-desc", "投入当前过路费等额现金进行建筑加层。加层后地价提升，过路费复利增长！");
+        const upgradeCost = calculateRent(state.id); 
+        DOM.setText("modal-label-1", "当前地价 / 等级"); DOM.setText("prop-val-1", `$${state.currentValue.toLocaleString()} (Lv.${state.level})`);
+        DOM.setText("modal-label-2", "本次加建工程款"); DOM.setText("prop-val-2", `$${upgradeCost.toLocaleString()}`);
+        
+        const nextValue = state.currentValue + upgradeCost;
+        DOM.setText("modal-label-3", "升级后过路费(10%)"); 
+        DOM.setText("prop-val-3", `$${Math.floor(nextValue * 0.1).toLocaleString()}`);
+        DOM.setText("prop-confirm-btn", "动工加建");
+      }
+
+      if (player.isAI) {
+        let aiDecision = false;
+        const requiredCash = actionType === "buy" ? tile.cost : calculateRent(state.id);
+        if (player.cash >= requiredCash * 1.5) aiDecision = true;
+        setTimeout(() => confirmPropertyAction(aiDecision), 1000);
+      } else {
+        DOM.show("property-modal");
+      }
+    }
+
+    function confirmPropertyAction(agree) {
+      DOM.hide("property-modal");
+      if (!currentPropPending) return;
+
+      const { tile, state, actionType } = currentPropPending;
+      const player = players[currentTurnIndex];
+
+      if (agree) {
+        const requiredCash = actionType === "buy" ? tile.cost : calculateRent(state.id);
+        if (player.cash >= requiredCash) {
+          adjustPlayerCash(player, -requiredCash);
+          if (actionType === "buy") {
+            state.owner = player.id;
+            state.level = 1;
+            state.currentValue = tile.cost;
+            addLog(`🏘️ 帝国版图：[${player.name}] 斥资 $${requiredCash.toLocaleString()} 将 [${tile.name}] 纳入帝国版图！`, "text-pink-400");
+          } else {
+            state.level++;
+            state.currentValue += requiredCash; 
+            addLog(`🏢 复利攀升：[${player.name}] 支付 $${requiredCash.toLocaleString()} 加建 [${tile.name}] (Lv.${state.level})，最新地价 $${state.currentValue.toLocaleString()}！`, "text-cyan-400");
+          }
+          if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
+          updatePropertiesUI();
+        } else {
+          addLog(`❌ 资金断裂：[${player.name}] 现金储备不够支付 [${tile.name}] 的契约，项目流产。`, "text-rose-400");
+        }
+      } else {
+        addLog(`💤 [${player.name}] 战略性放弃了 [${tile.name}] 的投资扩展。`, "text-slate-500");
+      }
+
+      currentPropPending = null;
+      prepareEndTurn();
+    }
+
+    // --- 命运黑天鹅 (总资产 5% 动态核算机制) ---
+    function triggerRandomEvent(player) {
+      const netWorth = calculateNetWorth(player);
+      const amount = Math.floor(netWorth * 0.05);
+
+      const events = [
+        {
+          title: "房地产税金稽查 💸",
+          text: `帝国资产规模触发红线，税务局强制课征总资产 5% 房产税：-$${amount.toLocaleString()}！`,
+          action: () => {
+            adjustPlayerCash(player, -amount);
+            if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
+          }
+        },
+        {
+          title: "世界城市博览会奖励 🎁",
+          text: `您名下的基建荣获世界最佳地产奖，政府下发总资产 5% 补贴：+$${amount.toLocaleString()}！`,
+          action: () => {
+            adjustPlayerCash(player, amount);
+            if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
+          }
+        },
+        {
+          title: "恶性通货膨胀风暴 💣",
+          text: `全球金融危机，法币贬值，资产缩水强制蒸发总资产 5% 现金：-$${amount.toLocaleString()}！`,
+          action: () => {
+            adjustPlayerCash(player, -amount);
+            if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
+          }
+        },
+        {
+          title: "海外投资分红 💎",
+          text: `海外资产大丰收，套现获得相当于总资产 5% 的巨额红利：+$${amount.toLocaleString()}！`,
+          action: () => {
+            adjustPlayerCash(player, amount);
+            if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
+          }
+        }
+      ];
+
+      const selected = events[Math.floor(Math.random() * events.length)];
+      selected.action();
+
+      showEventModal(selected.title, `[${player.name}] 命运交响曲：<br><br>${selected.text}`, "🎡");
+      addLog(`🎰 大转盘：[${player.name}] 触发命运事件 [${selected.title}]`, "text-purple-400 font-bold");
+      
+      updatePlayerRanksUI();
+      prepareEndTurn();
+    }
+
+    function prepareEndTurn() {
+      const p = players[currentTurnIndex];
+      updatePlayerRanksUI();
+
+      if (p.isAI) setTimeout(() => endTurn(), 900);
+      else DOM.setDisabled("btn-end-turn", false);
+    }
+
+    function endTurn() {
+      currentTurnIndex = (currentTurnIndex + 1) % players.length;
+      if (currentTurnIndex === 0) roundCount++;
+      startPlayerTurn();
+    }
+
+    function nextTurn() {
+      currentTurnIndex = (currentTurnIndex + 1) % players.length;
+      if (currentTurnIndex === 0) roundCount++;
+      startPlayerTurn();
+    }
+
+    // --- 📊 排行榜卡片重构 ---
+    function updatePlayerRanksUI() {
+      const rankContainer = document.getElementById("player-ranks");
+      if (!rankContainer) return;
+      rankContainer.innerHTML = "";
+
+      const sorted = [...players].map(p => {
+        let estateVal = 0;
+        mapStates.forEach(st => {
+          if (st.owner === p.id) {
+            estateVal += st.currentValue; 
+          }
+        });
+        return { ...p, propertyVal: estateVal, netWorth: p.cash + estateVal };
+      }).sort((a, b) => b.netWorth - a.netWorth);
+
+      sorted.forEach((p, idx) => {
+        const card = document.createElement("div");
+        const opacityClass = p.isBankrupt ? "opacity-30 grayscale" : "";
+        const isCurrent = (players[currentTurnIndex].id === p.id && !p.isBankrupt);
+        const turnBorder = isCurrent ? "border-[1.5px] border-cyan-400 shadow-[0_0_15px_rgba(0,255,255,0.2)] bg-slate-800 scale-[1.01] z-10" : "border border-slate-800/80 bg-slate-900/60";
+        
+        const aiTag = p.isAI ? `<span class="bg-slate-700 text-slate-300 text-[9px] px-1.5 rounded font-bold ml-2">AI</span>` : "";
+        const bankruptTag = p.isBankrupt ? `<div class="absolute inset-0 bg-rose-950/80 flex items-center justify-center font-bold text-rose-500 text-sm rounded-xl pointer-events-none select-none">宣告破产</div>` : "";
+
+        card.className = `p-3 md:p-4 rounded-xl transition-all relative flex flex-col justify-center flex-1 ${turnBorder} ${opacityClass}`;
+        card.innerHTML = `
+          <div class="flex items-center justify-between mb-2 border-b border-slate-800/60 pb-2">
+            <div class="flex items-center gap-3">
+              <span id="rank-avatar-${p.id}" class="text-2xl md:text-3xl filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]">${p.avatar}</span>
+              <div class="leading-tight">
+                <span class="font-black text-xs md:text-sm text-white flex items-center tracking-wider">${p.name.split(" ")[0]} ${aiTag}</span>
+                <span class="text-[9px] md:text-[10px] text-slate-400 block mt-0.5 font-bold">排名 #${idx + 1}</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col gap-1 md:gap-1.5 text-[9px] md:text-[10px] font-mono font-bold">
+            <div class="flex justify-between items-center"><span class="text-slate-500">帝国总估值</span> <span class="text-cyan-400 text-[10px] md:text-xs">$${p.netWorth.toLocaleString()}</span></div>
+            <div class="flex justify-between items-center"><span class="text-slate-500">可用流转现金</span> <span class="text-emerald-400">$${p.cash.toLocaleString()}</span></div>
+            <div class="flex justify-between items-center"><span class="text-slate-500">地产城邦规模</span> <span class="text-slate-300">$${p.propertyVal.toLocaleString()}</span></div>
+          </div>
+          ${bankruptTag}`;
+          
+        rankContainer.appendChild(card);
+      });
+    }
+
+    function checkGameOver() {
+      const activePlayers = players.filter(p => !p.isBankrupt);
+      if (activePlayers.length === 1) {
+        const winner = activePlayers[0];
+        showEventModal("👑 环球地产巨鳄诞生", `恭喜 [${winner.name}] 在这场残酷的资本收割战中，利用惊人的复利模型击溃所有对手，加冕世界首富！`, "🏆");
+        addLog(`🏆 商业对决宣告闭幕！大富翁荣誉头衔属于：[${winner.name}]！`, "text-yellow-400 font-bold");
+        DOM.setDisabled("btn-roll", true);
+        DOM.setDisabled("btn-end-turn", true);
+      }
+    }
+
+    function showEventModal(title, text, icon = "🎰") {
+      DOM.setText("event-modal-title", title);
+      DOM.setHTML("event-modal-text", text);
+      DOM.setText("event-modal-icon", icon);
+      DOM.show("event-modal");
+    }
+
+    function closeEventModal() {
+      DOM.hide("event-modal");
+    }
+
+    document.addEventListener("DOMContentLoaded", renderSetupScreen);
+  </script>
 </body>
 </html>
