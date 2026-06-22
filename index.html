@@ -3,15 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>大富翁：资本帝国复利版</title>
+  <title>大富翁</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: #0b0c10;
       -webkit-font-smoothing: antialiased;
-      color: #f1f5f9;
     }
 
     /* 隐藏所有滚动条，保持游戏全屏沉浸感 */
@@ -25,7 +23,7 @@
       70% { transform: rotate(-140deg) scale(0.9); }
       100% { transform: rotate(360deg) scale(1); }
     }
-    .dice-rolling { animation: diceRoll 0.5s ease-out infinite; }
+    .dice-rolling { animation: diceRoll 0.5s ease-out infinite; pointer-events: none; opacity: 0.8; }
 
     /* 💸 弹跳现金粒子飘动动画气泡 */
     @keyframes floatUp {
@@ -43,131 +41,129 @@
       pointer-events: none;
       z-index: 9999;
       font-family: "Impact", "Arial Black", sans-serif;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.5);
+      text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8), 0 0 10px rgba(255, 255, 255, 0.5);
     }
-    .money-gain { color: #34d399; }
-    .money-loss { color: #fb7185; }
+    .money-gain { color: #059669; } /* Emerald 600 */
+    .money-loss { color: #e11d48; } /* Rose 600 */
   </style>
 </head>
-<body class="p-2 md:p-4 min-h-screen flex flex-col justify-center items-center overflow-hidden">
+<!-- 采用护眼的青绿色背景，移除 overflow-hidden 使得小屏可以自由滚动 -->
+<body class="bg-teal-50 p-2 md:p-4 min-h-screen flex flex-col items-center py-8">
 
   <!-- 游戏主容器 -->
   <div id="app" class="w-full h-full flex items-center justify-center max-w-[1800px] mx-auto">
     
-    <!-- 1. 游戏初始化/角色选择界面 -->
-    <div id="setup-screen" class="max-w-2xl mx-auto my-auto bg-slate-900/95 rounded-[2.5rem] p-6 md:p-10 shadow-2xl border border-slate-800 backdrop-blur-md w-full">
+    <!-- 1. 游戏初始化/角色选择界面 (允许上下滚动) -->
+    <div id="setup-screen" class="max-w-2xl mx-auto my-auto bg-white/95 rounded-[2.5rem] p-6 md:p-10 shadow-2xl border border-teal-100 backdrop-blur-md w-full my-8">
       <div class="text-center mb-8">
-        <h1 class="text-4xl font-black bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 bg-clip-text text-transparent filter drop-shadow">
+        <h1 class="text-4xl font-black bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 bg-clip-text text-transparent filter drop-shadow-sm">
           大富翁：资本帝国
         </h1>
-        <p class="text-slate-500 text-xs mt-2 uppercase tracking-widest font-bold">16x9 宽幅全尺寸沙盘 · 纯净策略博弈</p>
+        <p class="text-teal-600 text-xs mt-2 uppercase tracking-widest font-bold">16x9 宽幅全尺寸沙盘 · 纯净策略博弈</p>
       </div>
 
       <!-- 游戏全局规则参数微调 -->
-      <div class="grid grid-cols-2 gap-4 bg-slate-950/60 p-5 rounded-2xl border border-slate-850 mb-6 shadow-inner">
+      <div class="grid grid-cols-2 gap-4 bg-teal-50/80 p-5 rounded-2xl border border-teal-100 mb-6 shadow-inner">
         <div>
-          <label class="block text-[11px] font-black text-slate-400 uppercase mb-1.5 tracking-wider">初始流动资金</label>
-          <input type="number" id="init-cash" value="50000" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-bold text-emerald-400 focus:outline-none focus:border-cyan-400">
+          <label class="block text-[11px] font-black text-teal-700 uppercase mb-1.5 tracking-wider">初始流动资金</label>
+          <input type="number" id="init-cash" value="50000" class="w-full bg-white border border-teal-200 rounded-xl px-4 py-2.5 text-sm font-bold text-emerald-600 focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 transition-all">
         </div>
         <div>
-          <label class="block text-[11px] font-black text-slate-400 uppercase mb-1.5 tracking-wider">起点周转红利</label>
-          <input type="number" id="start-bonus" value="10000" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-bold text-amber-400 focus:outline-none focus:border-cyan-400">
+          <label class="block text-[11px] font-black text-teal-700 uppercase mb-1.5 tracking-wider">起点周转红利</label>
+          <input type="number" id="start-bonus" value="10000" class="w-full bg-white border border-teal-200 rounded-xl px-4 py-2.5 text-sm font-bold text-amber-500 focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-200 transition-all">
         </div>
       </div>
 
-      <div class="mb-6 bg-slate-900 border border-slate-800 p-4 rounded-xl text-xs text-slate-400 space-y-2 leading-relaxed">
-        <div class="font-bold text-emerald-400 mb-1">⚖️ 资本复利法则：</div>
-        <div>1. 城市地价分为极品至平民四档: <span class="text-white font-bold">$3500, $3000, $2500, $2000</span>。</div>
-        <div>2. 基础过路费始终维持为当前地价的 <span class="text-white font-bold">10%</span>。升级不设上限。</div>
-        <div>3. <span class="text-amber-400 font-bold">资产生息</span>：回合开始时自动获取总资产 <span class="text-white">1%</span> 的无风险利息收益。</div>
-        <div>4. <span class="text-purple-400 font-bold">命运转盘</span>：所有命运黑天鹅事件惩戒与红利均按总资产的 <span class="text-white">5%</span> 动态核算。</div>
+      <div class="mb-6 bg-white border border-teal-100 p-4 rounded-xl text-xs text-teal-700 space-y-2 leading-relaxed shadow-sm">
+        <div class="font-bold text-emerald-600 mb-1">⚖️ 资本复利法则：</div>
+        <div>1. 城市地价分为极品至平民四档: <span class="text-teal-900 font-bold">$3500, $3000, $2500, $2000</span>。</div>
+        <div>2. 基础过路费始终维持为当前地价的 <span class="text-teal-900 font-bold">10%</span>。每次升级费用等于当前过路费。升级不设上限。</div>
+        <div>3. <span class="text-amber-500 font-bold">现金理财</span>：回合开始时自动获取<span class="text-teal-900 font-bold">可用流转现金 1%</span>的无风险利息收益。</div>
+        <div>4. <span class="text-purple-500 font-bold">命运转盘</span>：所有命运黑天鹅事件惩戒与红利均按<span class="text-teal-900 font-bold">总资产 5%</span>动态核算。</div>
       </div>
 
       <!-- 动态分配容器 -->
       <div class="space-y-3" id="player-setup-list"></div>
 
-      <button onclick="startGame()" class="w-full mt-8 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-base py-4 rounded-2xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.25)]">
+      <button onclick="startGame()" class="w-full mt-8 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-white font-black text-base py-4 rounded-2xl transition-all shadow-lg shadow-emerald-500/30 active:scale-95">
         签 署 契 约 ， 開 局
       </button>
     </div>
 
     <!-- 2. 核心大游戏主战场界面 -->
-    <div id="game-screen" class="hidden w-full flex items-center justify-center overflow-hidden">
+    <div id="game-screen" class="hidden w-full flex flex-col items-center justify-center relative">
       
-      <!-- 采用原生 Inline-Style 彻底锁死 16列 x 9行 的完美比例物理网格，免疫一切 CSS 解析失效 -->
-      <div id="board-container" class="grid gap-1 p-1.5 bg-slate-950 border border-slate-900 rounded-[1.25rem] relative w-full aspect-video max-h-[96vh] shadow-2xl"
-           style="grid-template-columns: repeat(16, minmax(0, 1fr)); grid-template-rows: repeat(9, minmax(0, 1fr));">
+      <!-- 采用原生 Inline-Style 彻底锁死 16列 x 9行 的完美比例物理网格 -->
+      <div id="board-container" class="grid gap-1 p-2 bg-teal-100 border border-teal-200 rounded-[1.25rem] relative w-full shadow-2xl"
+           style="grid-template-columns: repeat(16, minmax(0, 1fr)); grid-template-rows: repeat(9, minmax(0, 1fr)); aspect-ratio: 16/9; max-height: 96vh;">
         
         <!-- ==========================================
-             中央指挥大厅区块，按底层网格直接绑定，完全占满中间留白
+             中央指挥大厅区块 (跨列 2~15，行 2~8)
              ========================================== -->
              
-        <!-- 大厅左侧：排行榜 (跨越列 2~6，行 2~8，按城市比例尺寸完全挂靠对齐) -->
-        <div class="bg-slate-900/90 border border-slate-800/80 rounded-xl p-3 md:p-4 flex flex-col shadow-inner overflow-hidden"
-             style="grid-column: 2 / 7; grid-row: 2 / 9;">
-          <div class="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-2 md:mb-3 border-b border-slate-800/80 pb-2 md:pb-3 flex justify-between shrink-0">
+        <!-- 大厅左侧：排行榜 (约占 40% 宽度，纵向填满，重构为横向信息排版) -->
+        <div class="bg-white/90 border border-teal-200 rounded-xl p-3 md:p-4 flex flex-col shadow-lg overflow-hidden backdrop-blur-sm"
+             style="grid-column: 2 / 8; grid-row: 2 / 9;">
+          <div class="text-[10px] md:text-xs font-black text-teal-600 uppercase tracking-widest mb-2 border-b border-teal-100 pb-2 shrink-0 flex justify-between items-center">
             <span>🏆 财阀资产排行榜</span>
-            <span class="text-emerald-400 animate-pulse text-[9px] md:text-[10px]">复利运转中</span>
+            <span class="text-emerald-500 animate-pulse text-[9px] bg-emerald-50 px-2 py-0.5 rounded-full">复利运转中</span>
           </div>
           <div id="player-ranks" class="flex-grow flex flex-col gap-2 overflow-y-auto no-scrollbar">
             <!-- 排行榜卡片 -->
           </div>
         </div>
 
-        <!-- 大厅右上侧：行动中枢 (跨越列 7~15，行 2~4) -->
-        <div class="bg-slate-900 border border-slate-800 p-3 md:p-4 rounded-xl flex items-center justify-between shadow-lg"
-             style="grid-column: 7 / 16; grid-row: 2 / 4;">
-          <div class="flex items-center gap-3 md:gap-4 shrink-0 pl-1 md:pl-2">
-            <div id="current-player-avatar" class="text-4xl md:text-5xl lg:text-6xl filter drop-shadow animate-bounce">👧</div>
+        <!-- 大厅右上侧：单一掷骰行动中枢 -->
+        <div class="bg-white/95 border border-teal-200 p-4 rounded-xl flex items-center justify-between shadow-lg"
+             style="grid-column: 8 / 16; grid-row: 2 / 4;">
+          <div class="flex items-center gap-4 pl-2 shrink-0">
+            <div id="current-player-avatar" class="text-5xl lg:text-6xl filter drop-shadow animate-bounce">👧</div>
             <div>
-              <span class="text-[9px] md:text-[11px] text-slate-500 uppercase font-black block tracking-widest">当前行动方</span>
-              <span id="current-player-name" class="text-sm md:text-lg lg:text-xl font-black text-white block mt-0.5">加载中...</span>
+              <span class="text-[10px] md:text-xs text-teal-400 uppercase font-black block tracking-widest">当前行动方</span>
+              <span id="current-player-name" class="text-lg lg:text-2xl font-black text-teal-900 block mt-0.5">加载中...</span>
             </div>
           </div>
-          <div class="flex items-center gap-3 md:gap-4 pr-1 md:pr-2">
-            <div id="dice-element" class="w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-700 text-white text-2xl md:text-3xl lg:text-4xl font-black rounded-xl flex items-center justify-center shadow-lg select-none cursor-pointer">🎲</div>
-            <div class="flex flex-col gap-1.5 md:gap-2 w-24 md:w-28 lg:w-36">
-              <button id="btn-roll" onclick="triggerDiceRoll()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-[10px] md:text-[11px] lg:text-sm px-2 py-1.5 md:py-2 lg:py-2.5 rounded-lg transition-all shadow-md">
-                🎲 开始掷骰
-              </button>
-              <button id="btn-end-turn" onclick="endTurn()" disabled class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 font-black text-[10px] md:text-[11px] lg:text-sm px-2 py-1.5 md:py-2 lg:py-2.5 rounded-lg transition-all">
-                ⏭ 结束回合
-              </button>
+          
+          <!-- 唯一的骰子大按钮 (点击自动移动、自动提示、自动结束) -->
+          <div class="flex items-center gap-4 pr-2">
+            <span class="text-[10px] md:text-xs text-teal-500 font-bold hidden sm:block">点击右侧骰子<br>自动执行回合</span>
+            <div id="dice-element" onclick="triggerDiceRoll()" class="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-emerald-400 to-teal-500 text-white text-3xl lg:text-4xl rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30 cursor-pointer hover:scale-105 active:scale-95 transition-all select-none">
+              🎲
             </div>
           </div>
         </div>
 
-        <!-- 大厅右下侧：战局日志 (跨越列 7~15，行 4~8) -->
-        <div class="bg-slate-950/90 border border-slate-850 p-3 md:p-4 rounded-xl flex flex-col shadow-xl overflow-hidden"
-             style="grid-column: 7 / 16; grid-row: 4 / 9;">
-          <div class="text-[10px] md:text-[11px] lg:text-xs font-black text-slate-500 uppercase mb-2 md:mb-3 flex justify-between items-center border-b border-slate-850 pb-2 md:pb-3 shrink-0">
-            <span id="quick-tip" class="text-cyan-400">系统：准备掷骰</span>
-            <button onclick="clearLogs()" class="hover:text-white text-slate-400 text-[9px] md:text-[10px] bg-slate-800 px-3 py-1.5 rounded transition-all">清空记录</button>
+        <!-- 大厅右下侧：战局日志 (自动延伸) -->
+        <div class="bg-white/80 border border-teal-200 p-4 rounded-xl flex flex-col shadow-lg overflow-hidden backdrop-blur-sm"
+             style="grid-column: 8 / 16; grid-row: 4 / 9;">
+          <div class="text-[10px] md:text-xs font-black text-teal-600 uppercase mb-2 border-b border-teal-100 pb-2 shrink-0 flex justify-between items-center">
+            <span id="quick-tip" class="text-emerald-500">系统：等待操作</span>
+            <button onclick="clearLogs()" class="hover:bg-teal-100 text-teal-500 text-[10px] bg-teal-50 border border-teal-100 px-3 py-1 rounded-lg transition-all shadow-sm">清空记录</button>
           </div>
-          <div id="game-logs" class="flex-grow overflow-y-auto text-[9px] md:text-[10px] lg:text-xs space-y-1 md:space-y-1.5 text-slate-400 no-scrollbar pr-2"></div>
+          <div id="game-logs" class="flex-grow overflow-y-auto text-[10px] md:text-xs space-y-2 text-teal-700 no-scrollbar pr-2 font-medium"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 地产购置 / 加盖 复利机制弹窗 -->
-  <div id="property-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-slate-900 border border-slate-800 rounded-[2rem] p-6 max-w-sm w-full shadow-2xl relative">
-      <div id="prop-color-bar" class="h-3 w-full rounded-full mb-5 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
-      <h3 class="text-xl font-black text-white mb-1" id="prop-title">城市收购案</h3>
-      <p class="text-xs text-slate-400 leading-relaxed mb-5" id="prop-desc">加载中...</p>
+  <!-- 地产购置 / 加盖 复利机制弹窗 (无黑边护眼主题) -->
+  <div id="property-modal" class="hidden fixed inset-0 z-50 bg-teal-900/60 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white border border-teal-100 rounded-[2rem] p-6 max-w-sm w-full shadow-2xl relative">
+      <div id="prop-color-bar" class="h-2 w-full rounded-full mb-5 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
+      <h3 class="text-xl font-black text-teal-900 mb-1" id="prop-title">城市收购案</h3>
+      <p class="text-xs text-teal-500 leading-relaxed mb-5" id="prop-desc">加载中...</p>
       
-      <div class="bg-slate-950/80 p-4 rounded-2xl border border-slate-850 space-y-3 mb-5 text-xs font-bold font-mono">
-        <div class="flex justify-between"><span class="text-slate-500" id="modal-label-1">当前地价 / 等级</span><span class="text-slate-200" id="prop-val-1">$0</span></div>
-        <div class="flex justify-between"><span class="text-slate-500" id="modal-label-2">所需交易资金</span><span class="text-emerald-400 text-sm" id="prop-val-2">$0</span></div>
-        <div class="flex justify-between pt-2 border-t border-slate-800/80"><span class="text-slate-500" id="modal-label-3">建成后过路费(10%)</span><span class="text-rose-400 text-sm" id="prop-val-3">$0</span></div>
+      <div class="bg-teal-50/80 p-4 rounded-2xl border border-teal-100 space-y-3 mb-5 text-xs font-bold font-mono text-teal-800">
+        <div class="flex justify-between"><span class="text-teal-600" id="modal-label-1">当前地价 / 等级</span><span class="text-teal-900" id="prop-val-1">$0</span></div>
+        <div class="flex justify-between"><span class="text-teal-600" id="modal-label-2">所需交易资金</span><span class="text-emerald-600 text-sm" id="prop-val-2">$0</span></div>
+        <div class="flex justify-between pt-2 border-t border-teal-200/60"><span class="text-teal-600" id="modal-label-3">建成后过路费(10%)</span><span class="text-rose-500 text-sm" id="prop-val-3">$0</span></div>
       </div>
 
       <div class="flex gap-3">
-        <button onclick="confirmPropertyAction(false)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl transition-all text-xs">
+        <button onclick="confirmPropertyAction(false)" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition-all text-xs">
           放弃契机
         </button>
-        <button id="prop-confirm-btn" onclick="confirmPropertyAction(true)" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-3 rounded-xl transition-all text-xs shadow-lg">
+        <button id="prop-confirm-btn" onclick="confirmPropertyAction(true)" class="flex-1 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-white font-black py-3 rounded-xl transition-all text-xs shadow-lg shadow-emerald-500/30">
           确认交易
         </button>
       </div>
@@ -175,14 +171,14 @@
   </div>
 
   <!-- 命运/机会 弹窗 -->
-  <div id="event-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-slate-900 border border-slate-800 rounded-[2rem] p-6 max-w-sm w-full shadow-2xl text-center">
+  <div id="event-modal" class="hidden fixed inset-0 z-50 bg-teal-900/60 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white border border-teal-100 rounded-[2rem] p-6 max-w-sm w-full shadow-2xl text-center">
       <div class="text-5xl mb-3" id="event-modal-icon">🎰</div>
-      <h3 class="text-xl font-black text-cyan-300" id="event-modal-title">命运抉择</h3>
-      <div class="my-5 bg-slate-950/60 p-4 rounded-2xl text-xs leading-relaxed text-slate-300 min-h-[60px] flex items-center justify-center font-medium text-left border border-slate-850" id="event-modal-text">
+      <h3 class="text-xl font-black text-teal-800" id="event-modal-title">命运抉择</h3>
+      <div class="my-5 bg-teal-50/80 p-4 rounded-2xl text-xs leading-relaxed text-teal-700 min-h-[60px] flex items-center justify-center font-bold text-left border border-teal-100" id="event-modal-text">
         加载中...
       </div>
-      <button onclick="closeEventModal()" class="w-full bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white font-black py-3 rounded-xl transition-all text-xs shadow-md">
+      <button onclick="closeEventModal()" class="w-full bg-gradient-to-r from-teal-400 to-cyan-500 hover:from-teal-300 hover:to-cyan-400 text-white font-black py-3 rounded-xl transition-all text-sm shadow-md shadow-teal-500/30">
         遵从命运指引
       </button>
     </div>
@@ -228,7 +224,6 @@
     const DOM = {
       setText: (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; },
       setHTML: (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; },
-      setDisabled: (id, disabled) => { const el = document.getElementById(id); if (el) el.disabled = disabled; },
       show: (id) => { const el = document.getElementById(id); if (el) el.classList.remove('hidden'); },
       hide: (id) => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); },
       addClass: (id, cls) => { const el = document.getElementById(id); if (el) el.classList.add(cls); },
@@ -242,10 +237,10 @@
     const MAP_LENGTH = 46; 
 
     const PLAYER_TEMPLATES = [
-      { name: "孙小美 👧", color: "bg-pink-500", textCol: "text-pink-400", avatar: "👧", border: "border-pink-500", shadow: "shadow-pink-500/40" },
-      { name: "钱夫人 👩‍💼", color: "bg-blue-500", textCol: "text-blue-400", avatar: "👩‍💼", border: "border-blue-500", shadow: "shadow-blue-500/40" },
-      { name: "阿土伯 👴", color: "bg-green-500", textCol: "text-green-400", avatar: "👴", border: "border-green-500", shadow: "shadow-green-500/40" },
-      { name: "金贝贝 👶", color: "bg-amber-500", textCol: "text-amber-400", avatar: "👶", border: "border-amber-500", shadow: "shadow-amber-500/40" }
+      { name: "孙小美 👧", color: "bg-pink-500", avatar: "👧", border: "border-pink-400", shadow: "shadow-pink-400/40" },
+      { name: "钱夫人 👩‍💼", color: "bg-blue-500", avatar: "👩‍💼", border: "border-blue-400", shadow: "shadow-blue-400/40" },
+      { name: "阿土伯 👴", color: "bg-green-500", avatar: "👴", border: "border-green-400", shadow: "shadow-green-400/40" },
+      { name: "金贝贝 👶", color: "bg-amber-500", avatar: "👶", border: "border-amber-400", shadow: "shadow-amber-400/40" }
     ];
 
     const GLOBAL_CITIES = [
@@ -270,20 +265,20 @@
         else if (i >= 23 && i <= 38) { col = 16 - (i - 23); row = 9; } 
         else { col = 1; row = 9 - (i - 38); } 
 
-        let type = "LAND", name = "", color = "from-cyan-500 to-blue-600 font-black", cost = tiers[cityIndex % 4];
+        let type = "LAND", name = "", color = "from-cyan-400 to-blue-500", cost = tiers[cityIndex % 4];
         let desc = "";
 
-        if (i === 0) { type = "START"; name = "起点 🏁"; color = "bg-red-500"; cost = 0; }
-        else if (i === 15) { type = "HOSPITAL"; name = "医院 🏥"; color = "bg-blue-600"; cost = 0; }
-        else if (i === 23) { type = "PRISON"; name = "拘留所 🚓"; color = "bg-gray-600"; cost = 0; }
-        else if (i === 38) { type = "CHANCE"; name = "大转盘 🎡"; color = "bg-purple-600"; cost = 0; }
-        else if (i === 7 || i === 30 || i === 42) { 
-          type = "DESTINY"; name = "大转盘 🎡"; color = "bg-purple-600"; cost = 0; 
+        if (i === 0) { type = "START"; name = "起点 🏁"; color = "from-red-400 to-rose-500"; cost = 0; }
+        else if (i === 15) { type = "HOSPITAL"; name = "医院 🏥"; color = "from-blue-400 to-cyan-500"; cost = 0; }
+        else if (i === 23) { type = "PRISON"; name = "拘留所 🚓"; color = "from-slate-400 to-gray-500"; cost = 0; }
+        else if (i === 38 || i === 7 || i === 30 || i === 42) { 
+          type = (i % 2 === 0) ? "DESTINY" : "CHANCE"; 
+          name = type === "CHANCE" ? "商业机遇 🎁" : "黑天鹅 🎡"; color = "from-purple-400 to-indigo-500"; cost = 0; 
         } else {
           name = GLOBAL_CITIES[cityIndex] || "海外新城";
           cityIndex++;
-          const colors = ["from-pink-500 to-pink-600", "from-yellow-500 to-amber-500", "from-blue-500 to-cyan-500", "from-emerald-500 to-teal-500"];
-          color = colors[i % 4] + " font-bold";
+          const colors = ["from-pink-400 to-rose-400", "from-amber-400 to-orange-400", "from-cyan-400 to-blue-400", "from-emerald-400 to-teal-400"];
+          color = colors[i % 4];
         }
         TILE_DEFS.push({ id: i, col, row, name, type, cost, color, desc });
       }
@@ -321,11 +316,11 @@
     }
 
     // --- 日志与UI辅助 ---
-    function addLog(text, customClass = "text-slate-300") {
+    function addLog(text, customClass = "text-teal-700") {
       const logs = document.getElementById("game-logs");
       if (!logs) return;
       const item = document.createElement("div");
-      item.className = "p-2 mb-1.5 bg-slate-950/60 rounded-lg border border-slate-800/80 leading-relaxed font-mono shadow-inner " + customClass;
+      item.className = "p-2 mb-1.5 bg-teal-50/50 rounded-lg border border-teal-100 leading-relaxed font-mono shadow-sm " + customClass;
       item.textContent = `[第 ${roundCount} 轮] ${text}`;
       logs.appendChild(item);
       logs.scrollTop = logs.scrollHeight;
@@ -343,26 +338,25 @@
       
       PLAYER_TEMPLATES.forEach((tpl, index) => {
         const row = document.createElement("div");
-        row.className = "flex flex-col sm:flex-row items-center justify-between bg-slate-900/60 p-4 mb-3 rounded-2xl border border-slate-700/50 shadow-lg gap-4";
+        row.className = "flex flex-col sm:flex-row items-center justify-between bg-white p-4 mb-3 rounded-2xl border border-teal-100 shadow-sm gap-4";
         row.innerHTML = `<div class="flex items-center gap-4 w-full sm:w-auto">
-          <span class="text-4xl drop-shadow-md">${tpl.avatar}</span>
+          <span class="text-4xl drop-shadow-sm">${tpl.avatar}</span>
           <div class="flex-grow">
-            <input type="text" id="setup-name-${index}" value="${tpl.name}" class="bg-slate-950/80 border border-slate-700 text-white font-bold rounded-lg px-3 py-1.5 text-sm w-full focus:outline-none focus:border-cyan-400">
-            <span class="text-[10px] block text-slate-400 mt-1 uppercase tracking-wider">配戴色: ${tpl.name.split(' ')[0]}</span>
+            <input type="text" id="setup-name-${index}" value="${tpl.name}" class="bg-teal-50 border border-teal-200 text-teal-900 font-bold rounded-lg px-3 py-1.5 text-sm w-full focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-200">
           </div>
         </div>
-        <div class="flex gap-3 w-full sm:w-auto bg-slate-950/50 p-2.5 rounded-xl justify-center">
+        <div class="flex gap-3 w-full sm:w-auto bg-teal-50 p-2.5 rounded-xl justify-center border border-teal-100/50">
           <label class="flex items-center gap-1.5 cursor-pointer">
-            <input type="radio" name="setup-type-${index}" value="human" ${index === 0 ? "checked" : ""} class="accent-cyan-400 w-4 h-4">
-            <span class="text-xs font-bold text-slate-300">玩家</span>
+            <input type="radio" name="setup-type-${index}" value="human" ${index === 0 ? "checked" : ""} class="accent-emerald-500 w-4 h-4">
+            <span class="text-xs font-bold text-teal-800">玩家</span>
           </label>
           <label class="flex items-center gap-1.5 cursor-pointer">
-            <input type="radio" name="setup-type-${index}" value="ai" ${index > 0 ? "checked" : ""} class="accent-cyan-400 w-4 h-4">
-            <span class="text-xs font-bold text-slate-400">AI</span>
+            <input type="radio" name="setup-type-${index}" value="ai" ${index > 0 ? "checked" : ""} class="accent-emerald-500 w-4 h-4">
+            <span class="text-xs font-bold text-teal-600">AI</span>
           </label>
           <label class="flex items-center gap-1.5 cursor-pointer">
-            <input type="radio" name="setup-type-${index}" value="none" class="accent-cyan-400 w-4 h-4">
-            <span class="text-xs font-bold text-slate-500">不参战</span>
+            <input type="radio" name="setup-type-${index}" value="none" class="accent-gray-400 w-4 h-4">
+            <span class="text-xs font-bold text-gray-400">不参战</span>
           </label>
         </div>`;
         listContainer.appendChild(row);
@@ -389,7 +383,6 @@
             color: tpl.color,
             border: tpl.border,
             shadow: tpl.shadow,
-            textCol: tpl.textCol,
             cash: initCash,
             position: 0,
             isBankrupt: false,
@@ -414,7 +407,7 @@
 
       currentTurnIndex = 0;
       roundCount = 1;
-      addLog("🎬 16x9 宽幅实景大地图生成完毕！纯粹资本商战正式开盘！", "text-emerald-400 font-bold");
+      addLog("🎬 16x9 宽幅实景大地图生成完毕！纯粹资本商战正式开盘！", "text-emerald-600 font-bold");
       
       startPlayerTurn();
     }
@@ -430,31 +423,31 @@
         tileDiv.style.gridColumn = tile.col;
         tileDiv.style.gridRow = tile.row;
 
-        let headerColor = "bg-slate-800";
+        let headerColor = "bg-teal-700";
         let subText = "";
         const state = mapStates[tile.id];
 
         if (tile.type === "LAND") {
-          headerColor = "bg-gradient-to-r " + tile.color;
-          subText = `<span class="text-slate-500">买:$${tile.cost.toLocaleString()}</span>`;
+          headerColor = "bg-gradient-to-r text-white " + tile.color;
+          subText = `<span class="text-teal-600 font-bold">买:$${tile.cost.toLocaleString()}</span>`;
         } else if (tile.type === "START") {
-          headerColor = "bg-red-500"; subText = "周转红利";
+          headerColor = "bg-gradient-to-r text-white " + tile.color; subText = "周转红利";
         } else if (tile.type === "CHANCE" || tile.type === "DESTINY") {
-          headerColor = "bg-purple-600"; subText = "资产变数";
+          headerColor = "bg-gradient-to-r text-white " + tile.color; subText = "资产变数";
         } else if (tile.type === "HOSPITAL" || tile.type === "PRISON") {
-          headerColor = "bg-blue-600"; subText = "停顿休息";
+          headerColor = "bg-gradient-to-r text-white " + tile.color; subText = "停顿休息";
         }
 
-        tileDiv.className = "board-tile bg-slate-900 border border-slate-800/85 rounded-[0.6rem] p-0.5 md:p-1 flex flex-col justify-between overflow-hidden shadow relative select-none cursor-pointer h-full w-full";
+        tileDiv.className = "board-tile bg-white border border-teal-200/80 rounded-[0.6rem] p-0.5 md:p-1 flex flex-col justify-between overflow-hidden shadow-sm relative select-none";
         tileDiv.innerHTML = `
-          <div class="${headerColor} text-[7px] md:text-[9.5px] px-0.5 md:px-1 py-[2px] rounded text-center font-bold text-slate-950 shadow truncate">${tile.name}</div>
+          <div class="${headerColor} text-[7px] md:text-[9.5px] px-0.5 md:px-1 py-[2px] rounded text-center font-bold shadow-sm truncate">${tile.name}</div>
           <div class="flex-grow flex flex-col items-center justify-center relative min-h-0">
-            <span id="tile-house-visual-${tile.id}" class="text-xs md:text-xl lg:text-2xl filter drop-shadow-[0_2px_4px_rgba(255,255,255,0.05)]">
+            <span id="tile-house-visual-${tile.id}" class="text-xs md:text-xl lg:text-2xl filter drop-shadow-sm">
               ${getPropertyEmoji(tile.type, state ? state.level : 0)}
             </span>
-            <div id="tile-owner-indicator-${tile.id}" class="absolute bottom-0 text-[6px] md:text-[8px] font-black px-1 rounded shadow-lg"></div>
+            <div id="tile-owner-indicator-${tile.id}" class="absolute bottom-0 text-[6px] md:text-[8px] font-black px-1 rounded shadow-sm"></div>
           </div>
-          <div class="text-[6px] md:text-[8px] lg:text-[9px] text-center font-bold tracking-tight truncate w-full" id="tile-footer-${tile.id}">${subText}</div>
+          <div class="text-[6px] md:text-[8px] lg:text-[9px] text-center tracking-tight truncate w-full pb-0.5" id="tile-footer-${tile.id}">${subText}</div>
           <div id="tile-players-holder-${tile.id}" class="absolute inset-x-0 bottom-0.5 flex justify-center gap-0.5 flex-wrap z-10 pointer-events-none px-1"></div>`;
         container.appendChild(tileDiv);
       });
@@ -477,16 +470,16 @@
         if (state.owner !== null) {
           const owner = players.find(p => p.id === state.owner);
           if (owner) {
-            tileDiv.className = `board-tile bg-slate-900 border-[1.5px] md:border-2 ${owner.border} rounded-[0.6rem] p-0.5 md:p-1 flex flex-col justify-between overflow-hidden relative select-none cursor-pointer h-full w-full ${owner.shadow}`;
-            indicator.className = `absolute bottom-0 text-[6px] md:text-[8px] text-slate-950 font-black px-1.5 py-0.5 rounded bg-white shadow-lg`;
+            tileDiv.className = `board-tile bg-white border-2 ${owner.border} rounded-[0.6rem] p-0.5 md:p-1 flex flex-col justify-between overflow-hidden relative select-none h-full w-full ${owner.shadow}`;
+            indicator.className = `absolute bottom-0 text-[6px] md:text-[8px] text-white font-black px-1.5 py-0.5 rounded shadow-sm ${owner.color}`;
             indicator.textContent = owner.name.split(" ")[0];
-            footer.innerHTML = `<span class="text-emerald-400 font-extrabold truncate w-full block">租:$${calculateRent(state.id).toLocaleString()}</span>`;
+            footer.innerHTML = `<span class="text-rose-500 font-extrabold truncate w-full block">租:$${calculateRent(state.id).toLocaleString()}</span>`;
             houseVisual.textContent = getPropertyEmoji("LAND", state.level);
           }
         } else {
-          tileDiv.className = "board-tile bg-slate-900 border border-slate-800/85 rounded-[0.6rem] p-0.5 md:p-1 flex flex-col justify-between overflow-hidden shadow relative select-none cursor-pointer h-full w-full";
+          tileDiv.className = "board-tile bg-white border border-teal-200/80 rounded-[0.6rem] p-0.5 md:p-1 flex flex-col justify-between overflow-hidden shadow-sm relative select-none h-full w-full";
           indicator.className = "hidden";
-          footer.innerHTML = `<span class="text-slate-500 font-bold truncate w-full block">买:$${tile.cost.toLocaleString()}</span>`;
+          footer.innerHTML = `<span class="text-teal-600 font-bold truncate w-full block">买:$${tile.cost.toLocaleString()}</span>`;
           houseVisual.textContent = "🌳";
         }
       });
@@ -504,8 +497,8 @@
         if (holder) {
           const pBadge = document.createElement("div");
           pBadge.id = "player-badge-" + p.id;
-          const activeClass = (players[currentTurnIndex].id === p.id) ? "animate-bounce ring-2 ring-yellow-400 z-20" : "ring-1 ring-white/50";
-          pBadge.className = `w-3 h-3 md:w-5 md:h-5 lg:w-6 lg:h-6 rounded-full flex items-center justify-center text-[7px] md:text-[10px] shadow-lg relative cursor-pointer ${p.color} ${activeClass} transition-all duration-350`;
+          const activeClass = (players[currentTurnIndex].id === p.id) ? "animate-bounce ring-2 ring-emerald-400 z-20" : "ring-1 ring-white/80";
+          pBadge.className = `w-3 h-3 md:w-4 md:h-4 lg:w-5 lg:h-5 rounded-full flex items-center justify-center text-[7px] md:text-[9px] shadow-md relative cursor-pointer ${p.color} ${activeClass} transition-all duration-350 text-white font-bold`;
           pBadge.innerHTML = p.avatar;
           holder.appendChild(pBadge);
         }
@@ -551,32 +544,31 @@
 
       DOM.setText("current-player-avatar", p.avatar);
       DOM.setText("current-player-name", p.name);
-      DOM.setText("quick-tip", "系统：请点击开始掷骰");
-
-      DOM.setDisabled("btn-end-turn", true);
-      DOM.setDisabled("btn-roll", false);
+      DOM.setText("quick-tip", "系统：等待行动...");
+      
+      // 允许点击骰子
+      DOM.removeClass("dice-element", "opacity-50");
+      DOM.removeClass("dice-element", "pointer-events-none");
       
       updatePlayerPositionsUI();
       updatePlayerRanksUI();
 
-      // 1% 资产利息结算
-      const netWorth = calculateNetWorth(p);
-      const interest = Math.floor(netWorth * 0.01);
+      // 1% 现金生息结算 (仅按可用现金计算)
+      const interest = Math.floor(p.cash * 0.01);
       if(interest > 0) {
         adjustPlayerCash(p, interest);
-        addLog(`🏦 资产生息：[${p.name}] 获得总资产 1% 的银行利息 +$${interest.toLocaleString()}`, "text-emerald-400 font-bold");
+        addLog(`🏦 现金生息：[${p.name}] 获得可用资金 1% 的利息 +$${interest.toLocaleString()}`, "text-emerald-600 font-bold");
         if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
       }
 
       if (p.skipTurns > 0) {
         p.skipTurns--;
-        addLog(`🏥 [${p.name}] 强制滞留中，无法行动（剩余回合: ${p.skipTurns}）。`, "text-slate-500");
-        DOM.setText("quick-tip", "禁足中，系统自动跳过该回合");
+        addLog(`🏥 [${p.name}] 强制滞留中，无法行动（剩余回合: ${p.skipTurns}）。`, "text-teal-600");
+        DOM.setText("quick-tip", "禁足中，自动结束");
         
-        DOM.setDisabled("btn-end-turn", false);
-        DOM.setDisabled("btn-roll", true);
-
-        if (p.isAI) setTimeout(() => endTurn(), 1200);
+        DOM.addClass("dice-element", "opacity-50");
+        DOM.addClass("dice-element", "pointer-events-none");
+        setTimeout(() => prepareEndTurn(), 1200);
         return;
       }
 
@@ -589,7 +581,10 @@
     function triggerDiceRoll() {
       if (isDiceRolling || players[currentTurnIndex].isBankrupt) return;
       const p = players[currentTurnIndex];
-      DOM.setDisabled("btn-roll", true);
+      
+      // 禁用骰子
+      DOM.addClass("dice-element", "opacity-50");
+      DOM.addClass("dice-element", "pointer-events-none");
       isDiceRolling = true;
 
       DOM.addClass("dice-element", "dice-rolling");
@@ -606,7 +601,7 @@
           DOM.removeClass("dice-element", "dice-rolling");
           isDiceRolling = false;
           
-          addLog(`🎲 [${p.name}] 掷出了 [${diceValue}] 点前进！`, "text-slate-100");
+          addLog(`🎲 [${p.name}] 掷出了 [${diceValue}] 点前进！`, "text-teal-800 font-bold");
           movePlayerStepByStep(p, diceValue);
         }
       }, 75);
@@ -618,7 +613,7 @@
         player.position = (player.position + 1) % MAP_LENGTH;
         if (player.position === 0 && currentStep < steps - 1) {
           adjustPlayerCash(player, passStartBonus);
-          addLog(`🏪 [${player.name}] 路过起点，领取资本红利：+$${passStartBonus.toLocaleString()}！`, "text-emerald-400 font-bold");
+          addLog(`🏪 [${player.name}] 路过起点，领取资本红利：+$${passStartBonus.toLocaleString()}！`, "text-emerald-600 font-bold");
           if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
         }
         updatePlayerPositionsUI();
@@ -640,7 +635,7 @@
         player.skipTurns = 2;
         const reason = tile.type === "HOSPITAL" ? "医院静养 2 回合 🏥" : "拘留所禁足 2 回合 🚓";
         showEventModal("🚨 限制状态", `[${player.name}] 进入了 ${tile.name}，${reason}`, "🚨");
-        addLog(`🚨 [${player.name}] 停靠在 [${tile.name}]，起算禁足 2 回合。`, "text-rose-400");
+        addLog(`🚨 [${player.name}] 停靠在 [${tile.name}]，起算禁足 2 回合。`, "text-rose-500 font-bold");
         if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
         prepareEndTurn();
         return;
@@ -648,7 +643,7 @@
 
       if (tile.type === "START") {
         adjustPlayerCash(player, passStartBonus);
-        addLog(`🏪 [${player.name}] 精确降落起点！下发双倍奖金：+$${passStartBonus.toLocaleString()}！`, "text-emerald-400 font-bold");
+        addLog(`🏪 [${player.name}] 精确降落起点！下发双倍红利：+$${passStartBonus.toLocaleString()}！`, "text-emerald-600 font-bold");
         if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
         prepareEndTurn();
         return;
@@ -677,12 +672,12 @@
       const owner = players.find(p => p.id === ownerId);
       const finalRent = calculateRent(tileId);
 
-      addLog(`💸 [${renter.name}] 踩中 [${owner.name}] 的城市，需交纳 10% 过路费 $${finalRent.toLocaleString()}。`);
+      addLog(`💸 [${renter.name}] 踩中 [${owner.name}] 的城市，需交纳 10% 过路费 $${finalRent.toLocaleString()}。`, "text-rose-600 font-bold");
       
       if (renter.cash >= finalRent) {
         adjustPlayerCash(renter, -finalRent);
         adjustPlayerCash(owner, finalRent);
-        addLog(`💰 [${renter.name}] 支付了过路费，资金汇入对方账户！`, "text-emerald-400");
+        addLog(`💰 [${renter.name}] 支付了过路费，资金汇入对方账户！`, "text-emerald-600");
         if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
         prepareEndTurn();
       } else {
@@ -691,13 +686,12 @@
     }
 
     function triggerLiquidationToPay(renter, creditor, debt) {
-      addLog(`🚨 [${renter.name}] 现金见底，启动房产权破产级折卖清算以偿还债务！`, "text-rose-500 font-bold");
+      addLog(`🚨 [${renter.name}] 现金见底，启动房产权破产级折卖清算以偿还债务！`, "text-rose-600 font-bold");
       
       for (let i = 0; i < mapStates.length; i++) {
         const state = mapStates[i];
         if (state.owner === renter.id) {
           const tile = TILE_DEFS[i];
-          // 变卖价格 = 当前总投资价值的 70%
           const refundPrice = Math.floor(state.currentValue * 0.7);
           
           state.owner = null;
@@ -715,7 +709,7 @@
       if (renter.cash >= debt) {
         adjustPlayerCash(renter, -debt);
         adjustPlayerCash(creditor, debt);
-        addLog(`✅ [${renter.name}] 清盘结束，交齐路费，度过破产危机。`, "text-green-400");
+        addLog(`✅ [${renter.name}] 清盘结束，交齐路费，度过破产危机。`, "text-emerald-600 font-bold");
         prepareEndTurn();
       } else {
         declareBankruptcy(renter, creditor);
@@ -724,7 +718,7 @@
 
     function declareBankruptcy(player, creditor) {
       player.isBankrupt = true;
-      addLog(`💀 帝国陨落！[${player.name}] 土地售罄仍资不抵债，正式宣告破产出局！`, "text-red-500 font-bold");
+      addLog(`💀 帝国陨落！[${player.name}] 土地售罄仍资不抵债，正式宣告破产出局！`, "text-red-600 font-bold");
       if (window.sound && typeof window.sound.playMisfortune === "function") window.sound.playMisfortune();
 
       if (player.cash > 0 && creditor) {
@@ -754,7 +748,7 @@
       currentPropPending = { tile, state, actionType };
       const player = players[currentTurnIndex];
 
-      DOM.setClass("prop-color-bar", `h-3 w-full rounded-full mb-5 bg-gradient-to-r ${tile.color.replace(' font-bold', '')}`);
+      DOM.setClass("prop-color-bar", `h-2 w-full rounded-full mb-5 bg-gradient-to-r ${tile.color.replace(' text-white', '')}`);
 
       if (actionType === "buy") {
         DOM.setText("prop-title", `签署收购：${tile.name}`);
@@ -801,19 +795,19 @@
             state.owner = player.id;
             state.level = 1;
             state.currentValue = tile.cost;
-            addLog(`🏘️ 帝国版图：[${player.name}] 斥资 $${requiredCash.toLocaleString()} 将 [${tile.name}] 纳入帝国版图！`, "text-pink-400");
+            addLog(`🏘️ 帝国版图：[${player.name}] 斥资 $${requiredCash.toLocaleString()} 将 [${tile.name}] 纳入帝国版图！`, "text-teal-600 font-bold");
           } else {
             state.level++;
             state.currentValue += requiredCash; 
-            addLog(`🏢 复利攀升：[${player.name}] 支付 $${requiredCash.toLocaleString()} 加建 [${tile.name}] (Lv.${state.level})，最新地价 $${state.currentValue.toLocaleString()}！`, "text-cyan-400");
+            addLog(`🏢 复利攀升：[${player.name}] 支付 $${requiredCash.toLocaleString()} 加建 [${tile.name}] (Lv.${state.level})，最新地价 $${state.currentValue.toLocaleString()}！`, "text-cyan-600 font-bold");
           }
           if (window.sound && typeof window.sound.playCoin === "function") window.sound.playCoin();
           updatePropertiesUI();
         } else {
-          addLog(`❌ 资金断裂：[${player.name}] 现金储备不够支付 [${tile.name}] 的契约，项目流产。`, "text-rose-400");
+          addLog(`❌ 资金断裂：[${player.name}] 现金储备不够支付 [${tile.name}] 的契约，项目流产。`, "text-rose-500 font-bold");
         }
       } else {
-        addLog(`💤 [${player.name}] 战略性放弃了 [${tile.name}] 的投资扩展。`, "text-slate-500");
+        addLog(`💤 [${player.name}] 战略性放弃了 [${tile.name}] 的投资扩展。`, "text-teal-500");
       }
 
       currentPropPending = null;
@@ -864,18 +858,20 @@
       selected.action();
 
       showEventModal(selected.title, `[${player.name}] 命运交响曲：<br><br>${selected.text}`, "🎡");
-      addLog(`🎰 大转盘：[${player.name}] 触发命运事件 [${selected.title}]`, "text-purple-400 font-bold");
+      addLog(`🎰 大转盘：[${player.name}] 触发命运事件 [${selected.title}]`, "text-purple-600 font-bold");
       
       updatePlayerRanksUI();
       prepareEndTurn();
     }
 
+    // --- 自动化回合控制 ---
     function prepareEndTurn() {
       const p = players[currentTurnIndex];
       updatePlayerRanksUI();
-
-      if (p.isAI) setTimeout(() => endTurn(), 900);
-      else DOM.setDisabled("btn-end-turn", false);
+      
+      // 无论玩家还是 AI，都平滑自动结束，进入下一轮
+      DOM.setText("quick-tip", "系统：回合结束计算中...");
+      setTimeout(() => endTurn(), 1500);
     }
 
     function endTurn() {
@@ -890,7 +886,7 @@
       startPlayerTurn();
     }
 
-    // --- 📊 排行榜卡片重构 ---
+    // --- 📊 排行榜卡片重构 (横排紧凑无滚动条) ---
     function updatePlayerRanksUI() {
       const rankContainer = document.getElementById("player-ranks");
       if (!rankContainer) return;
@@ -908,28 +904,42 @@
 
       sorted.forEach((p, idx) => {
         const card = document.createElement("div");
-        const opacityClass = p.isBankrupt ? "opacity-30 grayscale" : "";
+        const opacityClass = p.isBankrupt ? "opacity-40 grayscale" : "";
         const isCurrent = (players[currentTurnIndex].id === p.id && !p.isBankrupt);
-        const turnBorder = isCurrent ? "border-[1.5px] border-cyan-400 shadow-[0_0_15px_rgba(0,255,255,0.2)] bg-slate-800 scale-[1.01] z-10" : "border border-slate-800/80 bg-slate-900/60";
+        const turnBorder = isCurrent ? "border-2 border-emerald-400 shadow-lg shadow-emerald-500/20 bg-emerald-50/50 scale-[1.01] z-10" : "border border-teal-100 bg-white";
         
-        const aiTag = p.isAI ? `<span class="bg-slate-700 text-slate-300 text-[9px] px-1.5 rounded font-bold ml-2">AI</span>` : "";
-        const bankruptTag = p.isBankrupt ? `<div class="absolute inset-0 bg-rose-950/80 flex items-center justify-center font-bold text-rose-500 text-sm rounded-xl pointer-events-none select-none">宣告破产</div>` : "";
+        const aiTag = p.isAI ? `<span class="bg-teal-100 text-teal-600 text-[9px] px-1.5 py-0.5 rounded font-bold ml-1.5">AI</span>` : "";
+        const bankruptTag = p.isBankrupt ? `<div class="absolute inset-0 bg-white/80 flex items-center justify-center font-black text-rose-500 text-sm rounded-xl pointer-events-none select-none backdrop-blur-[1px]">宣告破产</div>` : "";
 
-        card.className = `p-3 md:p-4 rounded-xl transition-all relative flex flex-col justify-center flex-1 ${turnBorder} ${opacityClass}`;
+        // 卡片容器：flex 横排，高度自适应填满
+        card.className = `px-3 py-2 rounded-xl transition-all relative flex-1 ${turnBorder} ${opacityClass}`;
         card.innerHTML = `
-          <div class="flex items-center justify-between mb-2 border-b border-slate-800/60 pb-2">
-            <div class="flex items-center gap-3">
-              <span id="rank-avatar-${p.id}" class="text-2xl md:text-3xl filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]">${p.avatar}</span>
-              <div class="leading-tight">
-                <span class="font-black text-xs md:text-sm text-white flex items-center tracking-wider">${p.name.split(" ")[0]} ${aiTag}</span>
-                <span class="text-[9px] md:text-[10px] text-slate-400 block mt-0.5 font-bold">排名 #${idx + 1}</span>
+          <div class="flex items-center gap-2 h-full">
+            <span id="rank-avatar-${p.id}" class="text-3xl md:text-4xl filter drop-shadow-sm">${p.avatar}</span>
+            <div class="flex-grow flex flex-col justify-center gap-1.5">
+              
+              <!-- 头部：姓名和排名 -->
+              <div class="flex justify-between items-end border-b border-teal-100 pb-1">
+                <span class="font-black text-teal-800 text-xs md:text-sm flex items-center">${p.name.split(" ")[0]} ${aiTag}</span>
+                <span class="text-[9px] md:text-[10px] text-teal-500 font-bold px-1.5 bg-teal-50 rounded">排名 #${idx + 1}</span>
+              </div>
+              
+              <!-- 数据区：横向排列 -->
+              <div class="flex justify-between items-center text-[9px] md:text-[10px] font-mono text-teal-700">
+                <div class="flex flex-col">
+                  <span class="text-teal-400 font-bold mb-0.5">总估值</span>
+                  <span class="text-teal-800 font-black">$${p.netWorth.toLocaleString()}</span>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-teal-400 font-bold mb-0.5">现金</span>
+                  <span class="text-emerald-600 font-black">$${p.cash.toLocaleString()}</span>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-teal-400 font-bold mb-0.5">房产</span>
+                  <span class="text-cyan-600 font-black">$${p.propertyVal.toLocaleString()}</span>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="flex flex-col gap-1 md:gap-1.5 text-[9px] md:text-[10px] font-mono font-bold">
-            <div class="flex justify-between items-center"><span class="text-slate-500">帝国总估值</span> <span class="text-cyan-400 text-[10px] md:text-xs">$${p.netWorth.toLocaleString()}</span></div>
-            <div class="flex justify-between items-center"><span class="text-slate-500">可用流转现金</span> <span class="text-emerald-400">$${p.cash.toLocaleString()}</span></div>
-            <div class="flex justify-between items-center"><span class="text-slate-500">地产城邦规模</span> <span class="text-slate-300">$${p.propertyVal.toLocaleString()}</span></div>
           </div>
           ${bankruptTag}`;
           
@@ -942,9 +952,9 @@
       if (activePlayers.length === 1) {
         const winner = activePlayers[0];
         showEventModal("👑 环球地产巨鳄诞生", `恭喜 [${winner.name}] 在这场残酷的资本收割战中，利用惊人的复利模型击溃所有对手，加冕世界首富！`, "🏆");
-        addLog(`🏆 商业对决宣告闭幕！大富翁荣誉头衔属于：[${winner.name}]！`, "text-yellow-400 font-bold");
-        DOM.setDisabled("btn-roll", true);
-        DOM.setDisabled("btn-end-turn", true);
+        addLog(`🏆 商业对决宣告闭幕！大富翁荣誉头衔属于：[${winner.name}]！`, "text-emerald-600 font-black");
+        DOM.addClass("dice-element", "opacity-50");
+        DOM.addClass("dice-element", "pointer-events-none");
       }
     }
 
