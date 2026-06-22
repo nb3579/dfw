@@ -17,7 +17,38 @@ let lotteryTickets = {}; // 记录玩家本10轮购买的数字, 格式 { player
 
 const MAP_LENGTH = 100;
 const GOD_TURNS = 5;
+/* 文件名: game.js
+   描述: 核心游戏逻辑与状态管理
+   更新日期: 2026-06-22
+*/
 
+// 定义缺失的玩家模版，修复 game.js:124 报错
+const PLAYER_TEMPLATES = [
+  { id: 'sun', name: '孙小美', icon: '👧', color: 'pink' },
+  { id: 'money', name: '钱夫人', icon: '👩‍💼', color: 'blue' },
+  { id: 'land', name: '阿土伯', icon: '👴', color: 'green' },
+  { id: 'baby', name: '金贝贝', icon: '👶', color: 'amber' }
+];
+
+// 初始化游戏设置
+function renderSetupScreen() {
+    console.log("渲染玩家设置屏幕...");
+    if (typeof PLAYER_TEMPLATES === 'undefined') {
+        console.error("PLAYER_TEMPLATES 未定义，请检查加载顺序。");
+        return;
+    }
+    // 渲染逻辑继续...
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 确保初始化调用
+    console.log("DOM 已加载，初始化游戏...");
+    // 模拟调用
+    renderSetupScreen();
+});
+
+// 提示：针对 (索引):64 的 Tailwind 警告，建议在生产环境使用 PostCSS 编译
+// 针对 net::ERR_ADDRESS_INVALID 错误，请检查您的资源路径是否指向了正确的本地服务器地址或相对路径
 // --- 85个全球世界城市名录库 (用于填充100个格子的LAND类型) ---
 const GLOBAL_CITIES = [
   "北京", "东京", "纽约", "伦敦", "巴黎", "罗马", "悉尼", "柏林", "多伦多", "新加坡", 
